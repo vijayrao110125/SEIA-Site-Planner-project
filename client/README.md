@@ -15,7 +15,10 @@ From repo root:
 The dev server runs on `http://localhost:8000` and proxies `/api` via a configurable target.
 
 ## Update API Endpoint
-The client uses Vite’s dev proxy in `vite.config.js`:
+For **static site deployment**, set `VITE_API_BASE` to your API service URL
+in Render (example: `https://your-api-service.onrender.com`).
+
+For **local dev**, the client uses Vite’s dev proxy in `vite.config.js`:
 ```js
 server: {
   proxy: {
