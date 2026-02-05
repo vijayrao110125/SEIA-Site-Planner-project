@@ -1,0 +1,19 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+  "dev": "node index.js",
+  "start": "NODE_ENV=production node index.js"
+ },
+ "type": "module",
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "mongodb": "^6.17.0",
+    "nanoid": "^5.1.6"
+  }
+}
