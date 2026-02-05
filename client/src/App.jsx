@@ -312,9 +312,9 @@ export default function App() {
           </section>
         </main>
 
-        <footer className="py-8 text-center text-xs text-slate-500 dark:text-slate-500">
-          Frontend: localhost:8000 • Backend: localhost:3001
-        </footer>
+      <footer className="py-8 text-center text-xs text-slate-500 dark:text-slate-500">
+        Frontend and API running
+      </footer>
 
         {isSaveOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center">

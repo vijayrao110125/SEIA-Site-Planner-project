@@ -52,7 +52,7 @@ function getIsoPolys({ x, y, w, d, pad, scale, isoX, isoY }) {
     [px + wPx, py + dPx]
   ];
 
-  return { top, front, side, labelX: px + 4, labelY: py + 12 };
+  return { top, front, side, labelX: px + 4, labelY: py + 12, px, py, wPx, dPx };
 }
 
 function shade(hex, amount) {
@@ -100,6 +100,10 @@ export default function LayoutView({ computed, theme }) {
           className="w-full h-auto"
         >
           <defs>
+            <linearGradient id="bgFade" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={isDark ? "#0b0b0b" : "#f8fafc"} />
+              <stop offset="100%" stopColor={isDark ? "#141414" : "#eef2f7"} />
+            </linearGradient>
             <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
               <path
                 d="M 24 0 L 0 0 0 24"
@@ -112,6 +116,9 @@ export default function LayoutView({ computed, theme }) {
 
             <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
               <feDropShadow dx="0" dy="2" stdDeviation="2" floodOpacity="0.25" />
+            </filter>
+            <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%">
+              <feDropShadow dx="0" dy="0" stdDeviation="2.5" floodOpacity="0.35" floodColor="#e31b23" />
             </filter>
 
             {Array.from(new Set(placements.map((p) => p.type))).map((type) => {
@@ -148,7 +155,15 @@ export default function LayoutView({ computed, theme }) {
             y={pad - 8}
             width={maxWidthFt * scale + 16}
             height={displayLengthFt * scale + 16}
+            fill="url(#bgFade)"
+          />
+          <rect
+            x={pad - 8}
+            y={pad - 8}
+            width={maxWidthFt * scale + 16}
+            height={displayLengthFt * scale + 16}
             fill="url(#grid)"
+            opacity="0.7"
           />
 
           {/* 100ft boundary */}
@@ -168,6 +183,16 @@ export default function LayoutView({ computed, theme }) {
             const poly = getIsoPolys({ ...p, pad, scale, isoX, isoY });
             const palette = TYPE_STYLE[p.type] ?? TYPE_STYLE.Megapack;
             const suffix = isDark ? "d" : "l";
+            const ventX = poly.px + 6;
+            const ventY = poly.py + Math.max(6, poly.dPx * 0.2);
+            const ventW = Math.max(10, poly.wPx * 0.35);
+            const ventGap = 4;
+            const boltX = poly.px + poly.wPx - 6;
+            const boltY = poly.py + 6;
+            const ledX = poly.px + poly.wPx - 12;
+            const ledY = poly.py + poly.dPx - 8;
+            const labelW = Math.min(poly.wPx - 8, p.type.length * 4.6 + 10);
+            const labelH = 12;
             return (
               <g key={p.id} className="stroke-slate-700/70 dark:stroke-slate-300/70" filter="url(#softShadow)">
                 <polygon points={pointsToString(poly.top)} fill={`url(#grad-${p.type}-top-${suffix})`} />
@@ -178,6 +203,64 @@ export default function LayoutView({ computed, theme }) {
                   className="stroke-white/50 dark:stroke-white/20"
                   strokeWidth="1"
                   fill="none"
+                />
+                <polyline
+                  points={pointsToString([poly.top[1], poly.top[2], poly.top[3]])}
+                  className="stroke-white/30 dark:stroke-white/10"
+                  strokeWidth="1"
+                  fill="none"
+                />
+                {/* Front face details */}
+                <line
+                  x1={ventX}
+                  y1={ventY}
+                  x2={ventX + ventW}
+                  y2={ventY}
+                  className="stroke-black/30 dark:stroke-white/20"
+                />
+                <line
+                  x1={ventX}
+                  y1={ventY + ventGap}
+                  x2={ventX + ventW}
+                  y2={ventY + ventGap}
+                  className="stroke-black/30 dark:stroke-white/20"
+                />
+                <line
+                  x1={ventX}
+                  y1={ventY + ventGap * 2}
+                  x2={ventX + ventW}
+                  y2={ventY + ventGap * 2}
+                  className="stroke-black/30 dark:stroke-white/20"
+                />
+                <circle cx={boltX} cy={boltY} r="1.6" className="fill-black/30 dark:fill-white/30" />
+                <circle
+                  cx={boltX}
+                  cy={boltY + 8}
+                  r="1.6"
+                  className="fill-black/30 dark:fill-white/30"
+                />
+                <circle
+                  cx={ledX}
+                  cy={ledY}
+                  r="2.2"
+                  className="fill-emerald-400/80 dark:fill-emerald-300/70"
+                />
+                {p.type === "Transformer" && (
+                  <circle
+                    cx={ledX}
+                    cy={ledY}
+                    r="4"
+                    className="fill-none stroke-red-500/60"
+                    filter="url(#softGlow)"
+                  />
+                )}
+                <rect
+                  x={poly.labelX - 2}
+                  y={poly.labelY - 9}
+                  width={labelW}
+                  height={labelH}
+                  rx="3"
+                  className="fill-white/70 dark:fill-black/40"
                 />
                 <text
                   x={poly.labelX}
