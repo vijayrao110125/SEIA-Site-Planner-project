@@ -24,7 +24,7 @@ async function getCollection() {
     { nameNormalized: 1 },
     {
       unique: true,
-      partialFilterExpression: { nameNormalized: { $type: "string", $ne: "" } }
+      partialFilterExpression: { nameNormalized: { $type: "string" } }
     }
   );
   return collection;

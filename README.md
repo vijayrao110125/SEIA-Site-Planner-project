@@ -6,6 +6,29 @@ Full‑stack app to configure Tesla battery site layouts, compute totals, and sa
 - `client/` — Vite + React + Tailwind UI
 - `server/` — Express API + MongoDB
 
+## Architecture (High‑level)
+```
+┌───────────────┐      HTTPS       ┌────────────────────────┐
+│   Browser     │ ───────────────▶ │  Client Static Site     │
+│ (React + UI)  │                  │      (Netlify)          │
+└───────┬───────┘                  └───────────┬─────────────┘
+        │    API (fetch /api/*)                │
+        └──────────────────────────────────────▶
+                                   ┌────────────────────────┐
+                                   │   Server (Express)     │
+                                   │  Render Web Service    │
+                                   └───────────┬────────────┘
+                                               │
+                                               │ MongoDB Atlas
+                                               ▼
+                                      ┌──────────────────┐
+                                      │   MongoDB DB     │
+                                      └──────────────────┘
+```
+Notes:
+- In local dev, Vite proxies `/api` to the server.
+- In static hosting, the client calls the server via `VITE_API_BASE`.
+
 ## Requirements
 - Node.js 18+ (20 recommended)
 - MongoDB Atlas connection string
@@ -30,7 +53,6 @@ Full‑stack app to configure Tesla battery site layouts, compute totals, and sa
 - `npm run render-build` — install + build for Render
 
 ## Deployment (Render)
-This repo includes `render.yaml` for a single service:
 1. Create a Render Web Service from this repo.
 2. Set `MONGODB_URI` in Render Environment.
 3. Deploy. The server serves the built client in production.
