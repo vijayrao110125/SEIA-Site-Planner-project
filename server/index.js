@@ -3,9 +3,12 @@ import cors from "cors";
 import { nanoid } from "nanoid";
 import path from "path";
 import { fileURLToPath } from "url";
+import dotenv from "dotenv";
 
 import { CATALOG, BATTERY_TYPES } from "./catalog.js";
 import { createSession, listSessions, getSession, updateSession, deleteSession } from "./db.js";
+
+dotenv.config();
 
 const app = express();
 app.use(cors());
@@ -134,7 +137,9 @@ app.get("/api/sessions", async (req, res) => {
 
 app.post("/api/sessions", async (req, res) => {
   try {
-    const name = req.body?.name ?? null;
+    const rawName = req.body?.name ?? null;
+    const name = typeof rawName === "string" ? rawName.trim() : "";
+    if (!name) return res.status(400).json({ error: "Session name is required" });
     const counts = req.body?.counts ?? {};
     const computed = computeAll(counts);
 
@@ -142,6 +147,9 @@ app.post("/api/sessions", async (req, res) => {
     await createSession({ id, name, payload: computed });
     res.json({ id });
   } catch (e) {
+    if (e?.code === 11000) {
+      return res.status(409).json({ error: "Session name already exists" });
+    }
     res.status(500).json({ error: String(e?.message ?? e) });
   }
 });
@@ -158,7 +166,8 @@ app.get("/api/sessions/:id", async (req, res) => {
 
 app.put("/api/sessions/:id", async (req, res) => {
   try {
-    const name = req.body?.name ?? null;
+    const rawName = req.body?.name ?? null;
+    const name = typeof rawName === "string" && rawName.trim() === "" ? null : rawName;
     const counts = req.body?.counts ?? {};
     const computed = computeAll(counts);
 
@@ -166,6 +175,9 @@ app.put("/api/sessions/:id", async (req, res) => {
     if (!updated) return res.status(404).json({ error: "Not found" });
     res.json(updated);
   } catch (e) {
+    if (e?.code === 11000) {
+      return res.status(409).json({ error: "Session name already exists" });
+    }
     res.status(500).json({ error: String(e?.message ?? e) });
   }
 });

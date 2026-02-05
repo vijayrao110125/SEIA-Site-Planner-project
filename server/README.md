@@ -3,6 +3,7 @@
 API for computing layouts and storing sessions.
 
 ## Env Vars
+You can provide these via a `.env` file or environment settings.
 - `MONGODB_URI` (required)
 - `MONGODB_DB` (optional, default `seia_site_planner`)
 - `MONGODB_COLLECTION` (optional, default `sessions`)

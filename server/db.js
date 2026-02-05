@@ -1,6 +1,9 @@
+import dotenv from "dotenv";
 import { MongoClient } from "mongodb";
 
-const MONGODB_URI = process.env.MONGODB_URI;
+dotenv.config();
+
+const MONGODB_URI = process.env.MONGODB_URI 
 const DB_NAME = process.env.MONGODB_DB || "seia_site_planner";
 const COLLECTION_NAME = process.env.MONGODB_COLLECTION || "sessions";
 
@@ -17,13 +20,43 @@ async function getCollection() {
   const db = client.db(DB_NAME);
   collection = db.collection(COLLECTION_NAME);
   await collection.createIndex({ updatedAt: -1 });
+  await collection.createIndex(
+    { nameNormalized: 1 },
+    {
+      unique: true,
+      partialFilterExpression: { nameNormalized: { $type: "string", $ne: "" } }
+    }
+  );
   return collection;
+}
+
+function normalizeName(name) {
+  if (typeof name !== "string") return null;
+  const trimmed = name.trim();
+  if (!trimmed) return null;
+  return trimmed.toLowerCase();
 }
 
 export async function createSession({ id, name, payload }) {
   const now = new Date().toISOString();
   const col = await getCollection();
-  await col.insertOne({ id, name: name ?? null, payload, createdAt: now, updatedAt: now });
+  const nameNormalized = normalizeName(name);
+  if (nameNormalized) {
+    const existing = await col.findOne({ nameNormalized }, { projection: { _id: 1 } });
+    if (existing) {
+      const err = new Error("Session name already exists");
+      err.code = 11000;
+      throw err;
+    }
+  }
+  await col.insertOne({
+    id,
+    name: name ?? null,
+    nameNormalized,
+    payload,
+    createdAt: now,
+    updatedAt: now
+  });
   return { id, createdAt: now, updatedAt: now };
 }
 
@@ -44,9 +77,21 @@ export async function getSession(id) {
 export async function updateSession(id, { name, payload }) {
   const now = new Date().toISOString();
   const col = await getCollection();
+  const nameNormalized = normalizeName(name);
+  if (nameNormalized) {
+    const existing = await col.findOne(
+      { nameNormalized, id: { $ne: id } },
+      { projection: { _id: 1 } }
+    );
+    if (existing) {
+      const err = new Error("Session name already exists");
+      err.code = 11000;
+      throw err;
+    }
+  }
   const res = await col.updateOne(
     { id },
-    { $set: { name: name ?? null, payload, updatedAt: now } }
+    { $set: { name: name ?? null, nameNormalized, payload, updatedAt: now } }
   );
   return res.matchedCount ? { id, updatedAt: now } : null;
 }

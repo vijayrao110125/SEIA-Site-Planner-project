@@ -30,8 +30,12 @@ export default function App() {
   );
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
+  const [saveError, setSaveError] = useState("");
   const [isSaveOpen, setIsSaveOpen] = useState(false);
   const [newSessionName, setNewSessionName] = useState("");
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState("");
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
   const batteryCount = useMemo(
     () => BATTERY_TYPES.reduce((s, t) => s + (Number(counts[t]) || 0), 0),
@@ -103,6 +107,12 @@ export default function App() {
     const name = newSessionName.trim();
     setStatus("Saving…");
     setError("");
+    setSaveError("");
+    if (!name) {
+      setStatus("");
+      setSaveError("Session name is required.");
+      return;
+    }
     try {
       const res = await apiPost("/api/sessions", { name, counts });
       setActiveSessionId(res.id);
@@ -114,7 +124,11 @@ export default function App() {
       setTimeout(() => setStatus(""), 1200);
     } catch (e) {
       setStatus("");
-      setError(String(e.message || e));
+      if (e?.status === 409) {
+        setSaveError("Session name already exists.");
+      } else {
+        setSaveError(String(e.message || e));
+      }
     }
   }
 
@@ -132,19 +146,27 @@ export default function App() {
       setTimeout(() => setStatus(""), 1200);
     } catch (e) {
       setStatus("");
-      setError(String(e.message || e));
+      if (e?.status === 409) {
+        setError("Session name already exists.");
+      } else {
+        setError(String(e.message || e));
+      }
     }
   }
 
   async function deleteActiveSession() {
     if (!activeSessionId) return;
-    const name = sessions.find((s) => s.id === activeSessionId)?.name;
-    const ok = confirm(`Delete session ${name ? `"${name}"` : activeSessionId}?`);
-    if (!ok) return;
+    setDeleteTargetId(activeSessionId);
+    setDeleteConfirmText("");
+    setIsDeleteOpen(true);
+  }
+
+  async function confirmDeleteSession() {
+    if (!deleteTargetId) return;
     setStatus("Deleting…");
     setError("");
     try {
-      await apiDelete(`/api/sessions/${activeSessionId}`);
+      await apiDelete(`/api/sessions/${deleteTargetId}`);
       setActiveSessionId("");
       localStorage.removeItem("seia:lastSessionId");
       const resetCounts = {
@@ -157,11 +179,21 @@ export default function App() {
       await recompute(resetCounts);
       await refreshSessions();
       setStatus("Deleted.");
+      setIsDeleteOpen(false);
+      setDeleteTargetId("");
+      setDeleteConfirmText("");
       setTimeout(() => setStatus(""), 1200);
     } catch (e) {
       setStatus("");
       setError(String(e.message || e));
     }
+  }
+
+  function closeDeleteModal() {
+    if (status === "Deleting…") return;
+    setIsDeleteOpen(false);
+    setDeleteTargetId("");
+    setDeleteConfirmText("");
   }
 
   function openSaveModal() {
@@ -211,18 +243,18 @@ export default function App() {
     <div className={theme === "dark" ? "dark" : ""}>
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       <header className="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-        <div className="mx-auto max-w-6xl px-4 py-4 flex items-start justify-between gap-3">
-          <div>
+        <div className="mx-auto max-w-6xl px-4 py-4 flex flex-col lg:flex-row lg:items-start justify-between gap-4">
+          <div className="lg:max-w-xl">
             <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">SEIA Site Planner</h1>
             <p className="text-sm text-slate-500 dark:text-slate-400">
               Configure devices → auto-add transformers → generate 100ft-max layout.
             </p>
           </div>
 
-          <div className="flex flex-col items-end gap-2">
+          <div className="flex flex-col lg:items-end gap-2 w-full lg:w-auto">
             <button
               onClick={toggleTheme}
-              className="group inline-flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300"
+              className="group inline-flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300 self-start lg:self-auto"
               aria-label="Toggle dark mode"
             >
               <span className="relative inline-flex h-6 w-6 items-center justify-center" aria-hidden="true">
@@ -341,6 +373,7 @@ export default function App() {
                   if (e.key === "Escape") closeSaveModal();
                 }}
               />
+              {saveError && <div className="mt-3 text-sm text-red-500">{saveError}</div>}
               <div className="mt-4 flex items-center justify-end gap-2">
                 <button
                   className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-3 py-2 text-sm font-medium"
@@ -354,6 +387,54 @@ export default function App() {
                   disabled={status === "Saving…"}
                 >
                   Save
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {isDeleteOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div
+              className="absolute inset-0 bg-slate-900/40"
+              onClick={closeDeleteModal}
+              aria-hidden="true"
+            />
+            <div className="relative w-full max-w-md mx-4 rounded-2xl bg-white dark:bg-slate-900 shadow-xl border border-slate-200 dark:border-slate-800 p-5">
+              <div className="text-base font-semibold text-slate-900 dark:text-slate-100">
+                Delete session
+              </div>
+              <div className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                This action cannot be undone. Type <span className="font-semibold">DELETE</span> to confirm removing{" "}
+                <span className="font-semibold">
+                  {sessions.find((s) => s.id === deleteTargetId)?.name || deleteTargetId}
+                </span>
+                .
+              </div>
+              <input
+                autoFocus
+                className="mt-4 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300 dark:focus:ring-red-700"
+                placeholder="Type DELETE"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") closeDeleteModal();
+                  if (e.key === "Enter" && deleteConfirmText === "DELETE") confirmDeleteSession();
+                }}
+              />
+              <div className="mt-4 flex items-center justify-end gap-2">
+                <button
+                  className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-3 py-2 text-sm font-medium"
+                  onClick={closeDeleteModal}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="rounded-xl bg-red-600 text-white px-3 py-2 text-sm font-medium hover:bg-red-700 disabled:opacity-50"
+                  onClick={confirmDeleteSession}
+                  disabled={status === "Deleting…" || deleteConfirmText !== "DELETE"}
+                >
+                  Delete
                 </button>
               </div>
             </div>
