@@ -184,11 +184,11 @@ app.delete("/api/sessions/:id", async (req, res) => {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-if (process.env.NODE_ENV === "production") {
-  const clientDist = path.join(__dirname, "..", "client", "dist");
-  app.use(express.static(clientDist));
-  app.get("/*", (req, res) => res.sendFile(path.join(clientDist, "index.html")));
-}
+// if (process.env.NODE_ENV === "production") {
+//   const clientDist = path.join(__dirname, "..", "client", "dist");
+//   app.use(express.static(clientDist));
+//   app.get("/*", (req, res) => res.sendFile(path.join(clientDist, "index.html")));
+// }
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => console.log(`Server on http://localhost:${PORT}`));
