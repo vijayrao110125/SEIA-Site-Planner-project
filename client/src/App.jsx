@@ -4,6 +4,8 @@ import DeviceCard from "./components/DeviceCard.jsx";
 import SummaryCard from "./components/SummaryCard.jsx";
 import LayoutView from "./components/LayoutView.jsx";
 import SessionsBar from "./components/SessionsBar.jsx";
+import { useNavigate } from "react-router-dom";
+
 
 const BATTERY_TYPES = ["MegapackXL", "Megapack2", "Megapack", "PowerPack"];
 
@@ -42,6 +44,7 @@ export default function App() {
     [counts]
   );
   const transformerCount = Math.ceil(batteryCount / 2);
+  const navigate = useNavigate();
 
   useEffect(() => {
     (async () => {
@@ -228,27 +231,27 @@ export default function App() {
     }
   }
   async function createNewSession() {
-  setError("");
-  setStatus("");
-  setSaveError("");
+    setError("");
+    setStatus("");
+    setSaveError("");
 
-  // Clear active session (unsaved state)
-  setActiveSessionId("");
-  localStorage.removeItem("seia:lastSessionId");
+    // Clear active session (unsaved state)
+    setActiveSessionId("");
+    localStorage.removeItem("seia:lastSessionId");
 
-  const empty = {
-    MegapackXL: 0,
-    Megapack2: 0,
-    Megapack: 0,
-    PowerPack: 0
-  };
+    const empty = {
+      MegapackXL: 0,
+      Megapack2: 0,
+      Megapack: 0,
+      PowerPack: 0
+    };
 
-  setCounts(empty);
-  await recompute(empty);
+    setCounts(empty);
+    await recompute(empty);
 
-  // Optional: reset any save modal inputs
-  setNewSessionName("");
-}
+    // Optional: reset any save modal inputs
+    setNewSessionName("");
+  }
 
   if (!catalog) {
     return (
@@ -274,6 +277,14 @@ export default function App() {
             </div>
 
             <div className="flex flex-col lg:items-end gap-2 w-full lg:w-auto">
+              <button
+                onClick={() => navigate("/3d", { state: { computed, theme } })}
+                className="rounded-xl bg-indigo-600 text-white px-4 py-2 text-sm font-medium hover:bg-indigo-700"
+              >
+                View 3D Layout
+              </button>
+
+
               <button
                 onClick={toggleTheme}
                 className="group inline-flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300 self-start lg:self-auto"
