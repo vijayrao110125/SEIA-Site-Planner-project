@@ -2,6 +2,7 @@ export default function SessionsBar({
   sessions,
   activeSessionId,
   onLoad,
+  onNewSession,
   onSaveNew,
   onUpdate,
   onDelete,
@@ -12,12 +13,17 @@ export default function SessionsBar({
       <select
         className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-2 text-sm w-full sm:w-auto"
         value={activeSessionId}
-        onChange={(e) => onLoad(e.target.value)}
+        onChange={(e) => {
+          const v = e.target.value;
+          if (v === "__new__") onNewSession();   // ✅ handle new session selection
+          else onLoad(v);
+        }}
       >
-        <option value="">Choose a session</option>
+        <option value="">{activeSessionId ? "" : "(Unsaved session)"}</option>
+        <option value="__new__">+ New session</option>
         {sessions.map((s) => (
           <option key={s.id} value={s.id}>
-            {s.name ? `${s.name} (${s.id})` : `Session ${s.id}`} • {new Date(s.updatedAt).toLocaleString()}
+            {s.name}
           </option>
         ))}
       </select>

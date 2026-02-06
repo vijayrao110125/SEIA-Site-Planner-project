@@ -227,6 +227,28 @@ export default function App() {
       setError(String(e.message || e));
     }
   }
+  async function createNewSession() {
+  setError("");
+  setStatus("");
+  setSaveError("");
+
+  // Clear active session (unsaved state)
+  setActiveSessionId("");
+  localStorage.removeItem("seia:lastSessionId");
+
+  const empty = {
+    MegapackXL: 0,
+    Megapack2: 0,
+    Megapack: 0,
+    PowerPack: 0
+  };
+
+  setCounts(empty);
+  await recompute(empty);
+
+  // Optional: reset any save modal inputs
+  setNewSessionName("");
+}
 
   if (!catalog) {
     return (
@@ -292,6 +314,7 @@ export default function App() {
                 sessions={sessions}
                 activeSessionId={activeSessionId}
                 onLoad={loadSession}
+                onNewSession={createNewSession}
                 onSaveNew={openSaveModal}
                 onUpdate={updateSession}
                 onDelete={deleteActiveSession}
