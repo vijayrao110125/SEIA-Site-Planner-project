@@ -3,31 +3,64 @@ import { MongoClient } from "mongodb";
 
 dotenv.config();
 
-const MONGODB_URI = process.env.MONGODB_URI 
+const MONGODB_URI = process.env.MONGODB_URI;
 const DB_NAME = process.env.MONGODB_DB || "seia_site_planner";
-const COLLECTION_NAME = process.env.MONGODB_COLLECTION || "sessions";
+const SESSIONS_COLLECTION_NAME = process.env.MONGODB_COLLECTION || "sessions";
+const USERS_COLLECTION_NAME = process.env.MONGODB_USERS_COLLECTION || "users";
 
 let client;
-let collection;
+let sessionsCollection;
+let usersCollection;
 
-async function getCollection() {
-  if (collection) return collection;
-  if (!MONGODB_URI) {
-    throw new Error("Missing MONGODB_URI environment variable");
-  }
+async function getClient() {
+  if (client) return client;
+  if (!MONGODB_URI) throw new Error("Missing MONGODB_URI environment variable");
   client = new MongoClient(MONGODB_URI);
   await client.connect();
-  const db = client.db(DB_NAME);
-  collection = db.collection(COLLECTION_NAME);
-  await collection.createIndex({ updatedAt: -1 });
-  await collection.createIndex(
-    { nameNormalized: 1 },
+  return client;
+}
+
+async function getSessionsCollection() {
+  if (sessionsCollection) return sessionsCollection;
+  const c = await getClient();
+  const db = c.db(DB_NAME);
+  sessionsCollection = db.collection(SESSIONS_COLLECTION_NAME);
+
+  await sessionsCollection.createIndex({ updatedAt: -1 });
+
+  // Migrate from global unique session names to per-user unique names.
+  // Best-effort: drop old unique index if present, then create compound unique index.
+  try {
+    const idx = await sessionsCollection.indexes();
+    const old = idx.find(
+      (i) => i?.unique && JSON.stringify(i?.key) === JSON.stringify({ nameNormalized: 1 })
+    );
+    if (old?.name) await sessionsCollection.dropIndex(old.name);
+  } catch {
+    // ignore (index may not exist / permissions)
+  }
+
+  await sessionsCollection.createIndex(
+    { userId: 1, nameNormalized: 1 },
     {
       unique: true,
-      partialFilterExpression: { nameNormalized: { $type: "string" } }
+      partialFilterExpression: { userId: { $type: "string" }, nameNormalized: { $type: "string" } }
     }
   );
-  return collection;
+
+  return sessionsCollection;
+}
+
+async function getUsersCollection() {
+  if (usersCollection) return usersCollection;
+  const c = await getClient();
+  const db = c.db(DB_NAME);
+  usersCollection = db.collection(USERS_COLLECTION_NAME);
+  await usersCollection.createIndex(
+    { emailNormalized: 1 },
+    { unique: true, partialFilterExpression: { emailNormalized: { $type: "string" } } }
+  );
+  return usersCollection;
 }
 
 function normalizeName(name) {
@@ -37,12 +70,75 @@ function normalizeName(name) {
   return trimmed.toLowerCase();
 }
 
-export async function createSession({ id, name, payload }) {
+function normalizeEmail(email) {
+  if (typeof email !== "string") return null;
+  const trimmed = email.trim();
+  if (!trimmed) return null;
+  return trimmed.toLowerCase();
+}
+
+export async function createUser({ id, email, passwordHash }) {
   const now = new Date().toISOString();
-  const col = await getCollection();
+  const col = await getUsersCollection();
+  const emailNormalized = normalizeEmail(email);
+  if (!emailNormalized) {
+    const err = new Error("Email is required");
+    err.code = "VALIDATION";
+    throw err;
+  }
+  await col.insertOne({
+    id,
+    email,
+    emailNormalized,
+    name: null,
+    passwordHash,
+    createdAt: now,
+    updatedAt: now
+  });
+  return { id, email, createdAt: now, updatedAt: now };
+}
+
+export async function createUserWithName({ id, email, name, passwordHash }) {
+  const now = new Date().toISOString();
+  const col = await getUsersCollection();
+  const emailNormalized = normalizeEmail(email);
+  if (!emailNormalized) {
+    const err = new Error("Email is required");
+    err.code = "VALIDATION";
+    throw err;
+  }
+  await col.insertOne({
+    id,
+    email,
+    emailNormalized,
+    name: typeof name === "string" ? name : null,
+    passwordHash,
+    createdAt: now,
+    updatedAt: now
+  });
+  return { id, email, name: typeof name === "string" ? name : null, createdAt: now, updatedAt: now };
+}
+
+export async function getUserByEmail(email) {
+  const col = await getUsersCollection();
+  const emailNormalized = normalizeEmail(email);
+  if (!emailNormalized) return null;
+  const row = await col.findOne({ emailNormalized }, { projection: { _id: 0 } });
+  return row || null;
+}
+
+export async function getUserById(id) {
+  const col = await getUsersCollection();
+  const row = await col.findOne({ id }, { projection: { _id: 0 } });
+  return row || null;
+}
+
+export async function createSession({ id, userId, name, payload }) {
+  const now = new Date().toISOString();
+  const col = await getSessionsCollection();
   const nameNormalized = normalizeName(name);
   if (nameNormalized) {
-    const existing = await col.findOne({ nameNormalized }, { projection: { _id: 1 } });
+    const existing = await col.findOne({ userId, nameNormalized }, { projection: { _id: 1 } });
     if (existing) {
       const err = new Error("Session name already exists");
       err.code = 11000;
@@ -51,6 +147,7 @@ export async function createSession({ id, name, payload }) {
   }
   await col.insertOne({
     id,
+    userId,
     name: name ?? null,
     nameNormalized,
     payload,
@@ -60,27 +157,30 @@ export async function createSession({ id, name, payload }) {
   return { id, createdAt: now, updatedAt: now };
 }
 
-export async function listSessions() {
-  const col = await getCollection();
+export async function listSessions(userId) {
+  const col = await getSessionsCollection();
   return col
-    .find({}, { projection: { _id: 0, id: 1, name: 1, createdAt: 1, updatedAt: 1 } })
+    .find(
+      { userId },
+      { projection: { _id: 0, id: 1, name: 1, createdAt: 1, updatedAt: 1 } }
+    )
     .sort({ updatedAt: -1 })
     .toArray();
 }
 
-export async function getSession(id) {
-  const col = await getCollection();
-  const row = await col.findOne({ id }, { projection: { _id: 0 } });
+export async function getSession(userId, id) {
+  const col = await getSessionsCollection();
+  const row = await col.findOne({ userId, id }, { projection: { _id: 0 } });
   return row || null;
 }
 
-export async function updateSession(id, { name, payload }) {
+export async function updateSession(userId, id, { name, payload }) {
   const now = new Date().toISOString();
-  const col = await getCollection();
+  const col = await getSessionsCollection();
   const nameNormalized = normalizeName(name);
   if (nameNormalized) {
     const existing = await col.findOne(
-      { nameNormalized, id: { $ne: id } },
+      { userId, nameNormalized, id: { $ne: id } },
       { projection: { _id: 1 } }
     );
     if (existing) {
@@ -90,14 +190,14 @@ export async function updateSession(id, { name, payload }) {
     }
   }
   const res = await col.updateOne(
-    { id },
+    { userId, id },
     { $set: { name: name ?? null, nameNormalized, payload, updatedAt: now } }
   );
   return res.matchedCount ? { id, updatedAt: now } : null;
 }
 
-export async function deleteSession(id) {
-  const col = await getCollection();
-  const res = await col.deleteOne({ id });
+export async function deleteSession(userId, id) {
+  const col = await getSessionsCollection();
+  const res = await col.deleteOne({ userId, id });
   return res.deletedCount ? { id } : null;
 }

@@ -6,28 +6,37 @@ import LayoutView from "./components/LayoutView.jsx";
 import SessionsBar from "./components/SessionsBar.jsx";
 
 const BATTERY_TYPES = ["MegapackXL", "Megapack2", "Megapack", "PowerPack"];
+const AUTH_TOKEN_KEY = "seia:token";
+const lastSessionKey = (userId) => `seia:lastSessionId:${userId || "anon"}`;
+const EMPTY_COUNTS = {
+  MegapackXL: 0,
+  Megapack2: 0,
+  Megapack: 0,
+  PowerPack: 0
+};
 
 export default function App() {
-  const [hasLoadedSession, setHasLoadedSession] = useState(false);
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem("seia:theme");
     if (saved === "light" || saved === "dark") return saved;
     return window.matchMedia?.("(prefers-color-scheme: dark)")?.matches ? "dark" : "light";
   });
 
+  const [authReady, setAuthReady] = useState(false);
+  const [user, setUser] = useState(null);
+  const [authMode, setAuthMode] = useState("login"); // "login" | "register"
+  const [authName, setAuthName] = useState("");
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authStatus, setAuthStatus] = useState("");
+  const [authError, setAuthError] = useState("");
+
   const [catalog, setCatalog] = useState(null);
-  const [counts, setCounts] = useState({
-    MegapackXL: 0,
-    Megapack2: 0,
-    Megapack: 0,
-    PowerPack: 0
-  });
+  const [counts, setCounts] = useState(EMPTY_COUNTS);
 
   const [computed, setComputed] = useState(null);
   const [sessions, setSessions] = useState([]);
-  const [activeSessionId, setActiveSessionId] = useState(
-    localStorage.getItem("seia:lastSessionId") || ""
-  );
+  const [activeSessionId, setActiveSessionId] = useState("");
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [saveError, setSaveError] = useState("");
@@ -46,13 +55,38 @@ export default function App() {
   useEffect(() => {
     (async () => {
       try {
+        const token = localStorage.getItem(AUTH_TOKEN_KEY) || "";
+        if (!token) {
+          setAuthReady(true);
+          return;
+        }
+        const me = await apiGet("/api/auth/me");
+        setUser(me.user);
+      } catch (e) {
+        localStorage.removeItem(AUTH_TOKEN_KEY);
+      }
+      setAuthReady(true);
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    setActiveSessionId("");
+    setCounts(EMPTY_COUNTS);
+    setComputed(null);
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    (async () => {
+      try {
         const data = await apiGet("/api/catalog");
         setCatalog(data.catalog);
       } catch (e) {
         setError(String(e.message || e));
       }
     })();
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
     const isDark = theme === "dark";
@@ -65,6 +99,51 @@ export default function App() {
     setTheme((t) => (t === "dark" ? "light" : "dark"));
   }
 
+  function signOut() {
+    if (user?.id) localStorage.removeItem(lastSessionKey(user.id));
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+    setUser(null);
+    setCatalog(null);
+    setCounts(EMPTY_COUNTS);
+    setSessions([]);
+    setActiveSessionId("");
+    setComputed(null);
+    setStatus("");
+    setError("");
+    setSaveError("");
+    setIsSaveOpen(false);
+    setIsDeleteOpen(false);
+    setDeleteTargetId("");
+    setDeleteConfirmText("");
+  }
+
+  async function submitAuth() {
+    const name = authName.trim();
+    const email = authEmail.trim();
+    const password = authPassword;
+    setAuthError("");
+    setAuthStatus(authMode === "login" ? "Signing in…" : "Creating account…");
+    try {
+      const path = authMode === "login" ? "/api/auth/login" : "/api/auth/register";
+      if (authMode === "register" && !name) {
+        setAuthStatus("");
+        setAuthError("Name is required.");
+        return;
+      }
+      const payload = authMode === "register" ? { name, email, password } : { email, password };
+      const res = await apiPost(path, payload);
+      localStorage.setItem(AUTH_TOKEN_KEY, res.token);
+      setUser(res.user);
+      setComputed(null);
+      setCounts(EMPTY_COUNTS);
+      setAuthPassword("");
+      setAuthStatus("");
+    } catch (e) {
+      setAuthStatus("");
+      setAuthError(String(e.message || e));
+    }
+  }
+
   async function recompute(nextCounts) {
     try {
       setError("");
@@ -75,11 +154,6 @@ export default function App() {
     }
   }
 
-  useEffect(() => {
-    recompute(counts);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   async function onCountChange(type, value) {
     const v = Math.max(0, Math.floor(Number(value || 0)));
     const next = { ...counts, [type]: v };
@@ -88,20 +162,15 @@ export default function App() {
   }
 
   async function refreshSessions() {
+    if (!user?.id) return;
     const data = await apiGet("/api/sessions");
     setSessions(data.sessions);
   }
 
   useEffect(() => {
     refreshSessions().catch(() => { });
-  }, []);
-
-  useEffect(() => {
-    if (hasLoadedSession) return;
-    if (!activeSessionId) return;
-    setHasLoadedSession(true);
-    loadSession(activeSessionId);
-  }, [activeSessionId, hasLoadedSession]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   async function saveNewSession() {
     const name = newSessionName.trim();
@@ -116,7 +185,7 @@ export default function App() {
     try {
       const res = await apiPost("/api/sessions", { name, counts });
       setActiveSessionId(res.id);
-      localStorage.setItem("seia:lastSessionId", res.id);
+      localStorage.setItem(lastSessionKey(user?.id), res.id);
       await refreshSessions();
       setStatus("Saved.");
       setIsSaveOpen(false);
@@ -168,7 +237,7 @@ export default function App() {
     try {
       await apiDelete(`/api/sessions/${deleteTargetId}`);
       setActiveSessionId("");
-      localStorage.removeItem("seia:lastSessionId");
+      localStorage.removeItem(lastSessionKey(user?.id));
       const resetCounts = {
         MegapackXL: 0,
         Megapack2: 0,
@@ -176,7 +245,7 @@ export default function App() {
         PowerPack: 0
       };
       setCounts(resetCounts);
-      await recompute(resetCounts);
+      setComputed(null);
       await refreshSessions();
       setStatus("Deleted.");
       setIsDeleteOpen(false);
@@ -220,7 +289,7 @@ export default function App() {
       setCounts(loadedCounts);
       setComputed(s.payload);
       setActiveSessionId(id);
-      localStorage.setItem("seia:lastSessionId", id);
+      localStorage.setItem(lastSessionKey(user?.id), id);
       setStatus("");
     } catch (e) {
       setStatus("");
@@ -228,33 +297,126 @@ export default function App() {
     }
   }
   async function createNewSession() {
-  setError("");
-  setStatus("");
-  setSaveError("");
+    setError("");
+    setStatus("");
+    setSaveError("");
 
-  // Clear active session (unsaved state)
-  setActiveSessionId("");
-  localStorage.removeItem("seia:lastSessionId");
+    setActiveSessionId("");
+    localStorage.removeItem(lastSessionKey(user?.id));
 
-  const empty = {
-    MegapackXL: 0,
-    Megapack2: 0,
-    Megapack: 0,
-    PowerPack: 0
-  };
+    const empty = {
+      MegapackXL: 0,
+      Megapack2: 0,
+      Megapack: 0,
+      PowerPack: 0
+    };
 
-  setCounts(empty);
-  await recompute(empty);
+    setCounts(empty);
+    setComputed(null);
+    setNewSessionName("");
+  }
 
-  // Optional: reset any save modal inputs
-  setNewSessionName("");
-}
+  if (!authReady) {
+    return (
+      <div className="min-h-screen bg-zinc-50 dark:bg-black flex items-center justify-center p-6">
+        <div className="rounded-2xl bg-white dark:bg-zinc-950 shadow-sm border border-zinc-200 dark:border-zinc-800 p-6 w-full max-w-xl">
+          <div className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Loading…</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className={theme === "dark" ? "dark" : ""}>
+        <div className="min-h-screen bg-zinc-50 dark:bg-black flex items-center justify-center p-6">
+          <div className="rounded-2xl bg-white dark:bg-zinc-950 shadow-sm p-6 w-full max-w-md border border-zinc-200 dark:border-zinc-800">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
+                  {authMode === "login" ? "Sign in" : "Create account"}
+                </div>
+                <div className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+                  Sign in to view and save your sessions.
+                </div>
+              </div>
+              <button
+                onClick={toggleTheme}
+                className="rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-200 px-3 py-2 text-sm font-medium"
+              >
+                {theme === "dark" ? "Light" : "Dark"}
+              </button>
+            </div>
+
+            <div className="mt-5 space-y-3">
+              {authMode === "register" && (
+                <input
+                  className="w-full rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-700"
+                  placeholder="Full name"
+                  value={authName}
+                  onChange={(e) => setAuthName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") submitAuth();
+                  }}
+                />
+              )}
+              <input
+                className="w-full rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-700"
+                placeholder="Email"
+                value={authEmail}
+                onChange={(e) => setAuthEmail(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") submitAuth();
+                }}
+              />
+              <input
+                className="w-full rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-700"
+                placeholder="Password"
+                type="password"
+                value={authPassword}
+                onChange={(e) => setAuthPassword(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") submitAuth();
+                }}
+              />
+            </div>
+
+            {authError && <div className="mt-3 text-sm text-red-500">{authError}</div>}
+            {authStatus && (
+              <div className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">{authStatus}</div>
+            )}
+
+            <div className="mt-5 flex items-center justify-between gap-2">
+              <button
+                className="text-sm text-zinc-600 dark:text-zinc-300 hover:underline"
+                onClick={() => {
+                  setAuthMode((m) => (m === "login" ? "register" : "login"));
+                  setAuthError("");
+                  setAuthStatus("");
+                }}
+                disabled={!!authStatus}
+              >
+                {authMode === "login" ? "Create an account" : "I already have an account"}
+              </button>
+              <button
+                className="rounded-xl bg-blue-600 text-white px-3 py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+                onClick={submitAuth}
+                disabled={!!authStatus}
+              >
+                {authMode === "login" ? "Sign in" : "Create"}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!catalog) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-6">
-        <div className="rounded-2xl bg-white dark:bg-slate-900 shadow p-6 w-full max-w-xl">
-          <div className="text-xl font-semibold text-slate-900 dark:text-slate-100">Loading…</div>
+      <div className="min-h-screen bg-zinc-50 dark:bg-black flex items-center justify-center p-6">
+        <div className="rounded-2xl bg-white dark:bg-zinc-950 shadow-sm border border-zinc-200 dark:border-zinc-800 p-6 w-full max-w-xl">
+          <div className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Loading…</div>
           {error && <div className="mt-3 text-sm text-red-500">{error}</div>}
         </div>
       </div>
@@ -263,57 +425,72 @@ export default function App() {
 
   return (
     <div className={theme === "dark" ? "dark" : ""}>
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
-        <header className="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+      <div className="min-h-screen bg-zinc-50 dark:bg-black">
+        <header className="border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-black/60 backdrop-blur">
           <div className="mx-auto max-w-6xl px-4 py-4 flex flex-col lg:flex-row lg:items-start justify-between gap-4">
-            <div className="lg:max-w-xl">
-              <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">SEIA Site Planner</h1>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                Configure devices → auto-add transformers → generate 100ft-max layout.
-              </p>
-            </div>
+	            <div className="lg:max-w-xl">
+	              <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">SEIA Site Planner</h1>
+	              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+	                Configure devices → auto-add transformers → generate 100ft-max layout.
+	              </p>
+	              <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+	                Signed in as{" "}
+	                <span className="font-medium text-zinc-700 dark:text-zinc-200">
+	                  {user.name || user.email}
+	                </span>
+	              </div>
+	            </div>
 
-            <div className="flex flex-col lg:items-end gap-2 w-full lg:w-auto">
-              <button
-                onClick={toggleTheme}
-                className="group inline-flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300 self-start lg:self-auto"
-                aria-label="Toggle dark mode"
-              >
-                <span className="relative inline-flex h-6 w-6 items-center justify-center" aria-hidden="true">
-                  {/* Sun */}
-                  <svg
-                    viewBox="0 0 24 24"
-                    className={`absolute h-5 w-5 transition-all ${theme === "dark" ? "opacity-0 scale-90" : "opacity-100 scale-100"
-                      }`}
-                  >
-                    <path
-                      className="fill-current"
-                      d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12zm0-16h1.5V5H12V2zm0 17h1.5v3H12v-3zM4.22 5.64 5.64 4.22 7.76 6.34 6.34 7.76 4.22 5.64zm12.02 12.02 1.42-1.42 2.12 2.12-1.42 1.42-2.12-2.12zM2 10.5h3v1.5H2v-1.5zm17 0h3v1.5h-3v-1.5zM4.22 18.36l2.12-2.12 1.42 1.42-2.12 2.12-1.42-1.42zM16.24 6.34l2.12-2.12 1.42 1.42-2.12 2.12-1.42-1.42z"
-                    />
-                  </svg>
-                  {/* Moon */}
-                  <svg
-                    viewBox="0 0 24 24"
-                    className={`absolute h-5 w-5 transition-all ${theme === "dark" ? "opacity-100 scale-100" : "opacity-0 scale-90"
-                      }`}
-                  >
-                    <path
-                      className="fill-current"
-                      d="M21 14.5A8.5 8.5 0 0 1 9.5 3a8.5 8.5 0 1 0 11.5 11.5z"
-                    />
-                  </svg>
-                </span>
-                <span className="relative inline-flex h-6 w-11 items-center rounded-full border border-slate-300 dark:border-slate-700 bg-slate-200 dark:bg-slate-700 transition-colors">
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${theme === "dark" ? "translate-x-5" : "translate-x-1"
-                      }`}
-                  />
-                </span>
-              </button>
-              <SessionsBar
-                sessions={sessions}
-                activeSessionId={activeSessionId}
-                onLoad={loadSession}
+	            <div className="flex flex-col lg:items-end gap-2 w-full lg:w-auto">
+		              <div className="flex items-center justify-end gap-2 w-full">
+		                <button
+		                  onClick={toggleTheme}
+		                  className="group inline-flex items-center gap-2 text-sm font-medium text-zinc-600 dark:text-zinc-300"
+		                  aria-label="Toggle dark mode"
+		                >
+	                  <span className="relative inline-flex h-6 w-6 items-center justify-center" aria-hidden="true">
+	                    {/* Sun */}
+	                    <svg
+	                      viewBox="0 0 24 24"
+	                      className={`absolute h-5 w-5 transition-all ${theme === "dark" ? "opacity-0 scale-90" : "opacity-100 scale-100"
+	                        }`}
+	                    >
+	                      <path
+	                        className="fill-current"
+	                        d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12zm0-16h1.5V5H12V2zm0 17h1.5v3H12v-3zM4.22 5.64 5.64 4.22 7.76 6.34 6.34 7.76 4.22 5.64zm12.02 12.02 1.42-1.42 2.12 2.12-1.42 1.42-2.12-2.12zM2 10.5h3v1.5H2v-1.5zm17 0h3v1.5h-3v-1.5zM4.22 18.36l2.12-2.12 1.42 1.42-2.12 2.12-1.42-1.42zM16.24 6.34l2.12-2.12 1.42 1.42-2.12 2.12-1.42-1.42z"
+	                      />
+	                    </svg>
+	                    {/* Moon */}
+	                    <svg
+	                      viewBox="0 0 24 24"
+	                      className={`absolute h-5 w-5 transition-all ${theme === "dark" ? "opacity-100 scale-100" : "opacity-0 scale-90"
+	                        }`}
+	                    >
+	                      <path
+	                        className="fill-current"
+	                        d="M21 14.5A8.5 8.5 0 0 1 9.5 3a8.5 8.5 0 1 0 11.5 11.5z"
+	                      />
+	                    </svg>
+	                  </span>
+		                  <span className="relative inline-flex h-6 w-11 items-center rounded-full border border-zinc-300 dark:border-zinc-700 bg-zinc-200 dark:bg-zinc-800 transition-colors">
+		                    <span
+		                      className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${theme === "dark" ? "translate-x-5" : "translate-x-1"
+		                        }`}
+		                    />
+		                  </span>
+		                </button>
+
+		                <button
+		                  onClick={signOut}
+		                  className="rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-200 px-3 py-2 text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800"
+		                >
+		                  Sign out
+		                </button>
+		              </div>
+	              <SessionsBar
+	                sessions={sessions}
+	                activeSessionId={activeSessionId}
+	                onLoad={loadSession}
                 onNewSession={createNewSession}
                 onSaveNew={openSaveModal}
                 onUpdate={updateSession}
@@ -332,10 +509,10 @@ export default function App() {
           </div>
         )}
 
-        <main className="mx-auto max-w-6xl px-4 py-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <section className="lg:col-span-1 space-y-4">
-            <div className="rounded-2xl bg-white dark:bg-slate-900 shadow p-4">
-              <div className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">Device configuration</div>
+	        <main className="mx-auto max-w-6xl px-4 py-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+	          <section className="lg:col-span-1 space-y-4">
+	            <div className="rounded-2xl bg-white dark:bg-zinc-950 shadow-sm border border-zinc-200 dark:border-zinc-800 p-4">
+	              <div className="text-sm font-semibold text-zinc-800 dark:text-zinc-100 mb-3">Device configuration</div>
 
               <div className="space-y-3">
                 {BATTERY_TYPES.map((type) => (
@@ -348,21 +525,21 @@ export default function App() {
                   />
                 ))}
 
-                <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-3 bg-slate-50 dark:bg-slate-800">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-sm font-semibold text-slate-800 dark:text-slate-100">Transformer</div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                        {catalog["Transformer"].w}ft × {catalog["Transformer"].d}ft • {catalog["Transformer"].energyMWh} MWh • ${catalog["Transformer"].cost.toLocaleString()}
-                        {catalog["Transformer"].release ? ` • ${catalog["Transformer"].release}` : ""}
-                      </div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400">
-                        Rule: 1 transformer per 2 industrial batteries
-                      </div>
-                    </div>
-                    <div className="text-lg font-semibold text-slate-900 dark:text-slate-100">{transformerCount}</div>
-                  </div>
-                </div>
+	                <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 p-3 bg-zinc-50 dark:bg-zinc-900">
+	                  <div className="flex items-center justify-between">
+	                    <div>
+	                      <div className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">Transformer</div>
+	                      <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+	                        {catalog["Transformer"].w}ft × {catalog["Transformer"].d}ft • {catalog["Transformer"].energyMWh} MWh • ${catalog["Transformer"].cost.toLocaleString()}
+	                        {catalog["Transformer"].release ? ` • ${catalog["Transformer"].release}` : ""}
+	                      </div>
+	                      <div className="text-xs text-zinc-500 dark:text-zinc-400">
+	                        Rule: 1 transformer per 2 industrial batteries
+	                      </div>
+	                    </div>
+	                    <div className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{transformerCount}</div>
+	                  </div>
+	                </div>
               </div>
 
             </div>
@@ -375,93 +552,93 @@ export default function App() {
           </section>
         </main>
 
-        <footer className="py-8 text-center text-xs text-slate-500 dark:text-slate-500">
-          Frontend and API running
-        </footer>
+	        <footer className="py-8 text-center text-xs text-zinc-500 dark:text-zinc-500">
+	          Frontend and API running
+	        </footer>
 
         {isSaveOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div
-              className="absolute inset-0 bg-slate-900/40"
-              onClick={closeSaveModal}
-              aria-hidden="true"
-            />
-            <div className="relative w-full max-w-md mx-4 rounded-2xl bg-white dark:bg-slate-900 shadow-xl border border-slate-200 dark:border-slate-800 p-5">
-              <div className="text-base font-semibold text-slate-900 dark:text-slate-100">
-                Save session
-              </div>
-              <div className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                Give this configuration a name (optional).
-              </div>
-              <input
-                autoFocus
-                className="mt-4 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-300 dark:focus:ring-slate-600"
-                placeholder="e.g., Q1 buildout"
-                value={newSessionName}
-                onChange={(e) => setNewSessionName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") saveNewSession();
-                  if (e.key === "Escape") closeSaveModal();
-                }}
-              />
-              {saveError && <div className="mt-3 text-sm text-red-500">{saveError}</div>}
-              <div className="mt-4 flex items-center justify-end gap-2">
-                <button
-                  className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-3 py-2 text-sm font-medium"
-                  onClick={closeSaveModal}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="rounded-xl bg-slate-900 text-white px-3 py-2 text-sm font-medium hover:bg-slate-800 disabled:opacity-50"
-                  onClick={saveNewSession}
-                  disabled={status === "Saving…"}
-                >
-                  Save
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+	            <div
+	              className="absolute inset-0 bg-black/40"
+	              onClick={closeSaveModal}
+	              aria-hidden="true"
+	            />
+	            <div className="relative w-full max-w-md mx-4 rounded-2xl bg-white dark:bg-zinc-950 shadow-xl border border-zinc-200 dark:border-zinc-800 p-5">
+	              <div className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+	                Save session
+	              </div>
+	              <div className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+	                Give this configuration a name (required).
+	              </div>
+	              <input
+	                autoFocus
+	                className="mt-4 w-full rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-700"
+	                placeholder="e.g., Q1 buildout"
+	                value={newSessionName}
+	                onChange={(e) => setNewSessionName(e.target.value)}
+	                onKeyDown={(e) => {
+	                  if (e.key === "Enter") saveNewSession();
+	                  if (e.key === "Escape") closeSaveModal();
+	                }}
+	              />
+	              {saveError && <div className="mt-3 text-sm text-red-500">{saveError}</div>}
+	              <div className="mt-4 flex items-center justify-end gap-2">
+	                <button
+	                  className="rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-200 px-3 py-2 text-sm font-medium"
+	                  onClick={closeSaveModal}
+	                >
+	                  Cancel
+	                </button>
+	                <button
+	                  className="rounded-xl bg-blue-600 text-white px-3 py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+	                  onClick={saveNewSession}
+	                  disabled={status === "Saving…"}
+	                >
+	                  Save
+	                </button>
+	              </div>
+	            </div>
+	          </div>
+	        )}
 
         {isDeleteOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div
-              className="absolute inset-0 bg-slate-900/40"
-              onClick={closeDeleteModal}
-              aria-hidden="true"
-            />
-            <div className="relative w-full max-w-md mx-4 rounded-2xl bg-white dark:bg-slate-900 shadow-xl border border-slate-200 dark:border-slate-800 p-5">
-              <div className="text-base font-semibold text-slate-900 dark:text-slate-100">
-                Delete session
-              </div>
-              <div className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                This action cannot be undone. Type <span className="font-semibold">DELETE</span> to confirm removing{" "}
-                <span className="font-semibold">
-                  {sessions.find((s) => s.id === deleteTargetId)?.name || deleteTargetId}
-                </span>
-                .
-              </div>
-              <input
-                autoFocus
-                className="mt-4 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300 dark:focus:ring-red-700"
-                placeholder="Type DELETE"
-                value={deleteConfirmText}
-                onChange={(e) => setDeleteConfirmText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Escape") closeDeleteModal();
-                  if (e.key === "Enter" && deleteConfirmText === "DELETE") confirmDeleteSession();
-                }}
-              />
-              <div className="mt-4 flex items-center justify-end gap-2">
+	            <div
+	              className="absolute inset-0 bg-black/40"
+	              onClick={closeDeleteModal}
+	              aria-hidden="true"
+	            />
+	            <div className="relative w-full max-w-md mx-4 rounded-2xl bg-white dark:bg-zinc-950 shadow-xl border border-zinc-200 dark:border-zinc-800 p-5">
+	              <div className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+	                Delete session
+	              </div>
+	              <div className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+	                This action cannot be undone. Type <span className="font-semibold">DELETE</span> to confirm removing{" "}
+	                <span className="font-semibold">
+	                  {sessions.find((s) => s.id === deleteTargetId)?.name || deleteTargetId}
+	                </span>
+	                .
+	              </div>
+	              <input
+	                autoFocus
+	                className="mt-4 w-full rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-700"
+	                placeholder="Type DELETE"
+	                value={deleteConfirmText}
+	                onChange={(e) => setDeleteConfirmText(e.target.value)}
+	                onKeyDown={(e) => {
+	                  if (e.key === "Escape") closeDeleteModal();
+	                  if (e.key === "Enter" && deleteConfirmText === "DELETE") confirmDeleteSession();
+	                }}
+	              />
+	              <div className="mt-4 flex items-center justify-end gap-2">
+	                <button
+	                  className="rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-200 px-3 py-2 text-sm font-medium"
+	                  onClick={closeDeleteModal}
+	                >
+	                  Cancel
+	                </button>
                 <button
-                  className="rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-3 py-2 text-sm font-medium"
-                  onClick={closeDeleteModal}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="rounded-xl bg-red-600 text-white px-3 py-2 text-sm font-medium hover:bg-red-700 disabled:opacity-50"
+                  className="rounded-xl bg-blue-600 text-white px-3 py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
                   onClick={confirmDeleteSession}
                   disabled={status === "Deleting…" || deleteConfirmText !== "DELETE"}
                 >

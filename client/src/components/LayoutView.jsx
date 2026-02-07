@@ -64,9 +64,12 @@ function shade(hex, amount) {
 }
 
 export default function LayoutView({ computed, theme }) {
-  if (!computed) return null;
-
-  const { layout } = computed;
+  const layout = computed?.layout ?? {
+    placements: [],
+    siteWidthFt: 0,
+    siteLengthFt: 0,
+    maxWidthFt: 100
+  };
   const { placements, siteWidthFt, siteLengthFt, maxWidthFt } = layout;
   const isDark = theme === "dark";
 
@@ -80,20 +83,22 @@ export default function LayoutView({ computed, theme }) {
   const hPx = displayLengthFt * scale + pad * 2 + isoY;
 
   return (
-    <div className="rounded-2xl bg-white dark:bg-slate-900 shadow p-4">
+    <div className="rounded-2xl bg-white dark:bg-zinc-950 shadow-sm border border-zinc-200 dark:border-zinc-800 p-4">
       <div className="flex items-start justify-between gap-3 mb-3">
         <div>
-          <div className="text-sm font-semibold text-slate-700 dark:text-slate-200">Site layout</div>
-          <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Max width: {maxWidthFt}ft • Current width: {siteWidthFt.toFixed(0)}ft
+          <div className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">Site layout</div>
+          <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+            {computed
+              ? `Max width: ${maxWidthFt}ft • Current width: ${siteWidthFt.toFixed(0)}ft`
+              : `Set device counts to generate a layout (max width ${maxWidthFt}ft).`}
           </div>
         </div>
-        <div className="text-xs text-slate-500 dark:text-slate-400">
+        <div className="text-xs text-zinc-500 dark:text-zinc-400">
           Tip: Zoom browser for bigger view
         </div>
       </div>
 
-      <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+      <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
         <svg
           viewBox={`0 0 ${wPx} ${hPx}`}
           preserveAspectRatio="xMinYMin meet"
@@ -107,7 +112,7 @@ export default function LayoutView({ computed, theme }) {
             <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
               <path
                 d="M 24 0 L 0 0 0 24"
-                className="stroke-slate-200 dark:stroke-slate-700"
+                className="stroke-zinc-200 dark:stroke-zinc-700"
                 strokeWidth="1"
                 fill="none"
                 opacity="0.6"
@@ -172,10 +177,10 @@ export default function LayoutView({ computed, theme }) {
             y={pad}
             width={maxWidthFt * scale}
             height={displayLengthFt * scale}
-            className="fill-none stroke-slate-300 dark:stroke-slate-600"
+            className="fill-none stroke-zinc-300 dark:stroke-zinc-600"
             strokeDasharray="6 4"
           />
-          <text x={pad} y={12} className="fill-slate-500 dark:fill-slate-400" fontSize="10">
+          <text x={pad} y={12} className="fill-zinc-500 dark:fill-zinc-400" fontSize="10">
             Width cap: {maxWidthFt}ft
           </text>
 
@@ -194,7 +199,7 @@ export default function LayoutView({ computed, theme }) {
             const labelW = Math.min(poly.wPx - 8, p.type.length * 4.6 + 10);
             const labelH = 12;
             return (
-              <g key={p.id} className="stroke-slate-700/70 dark:stroke-slate-300/70" filter="url(#softShadow)">
+              <g key={p.id} className="stroke-zinc-700/70 dark:stroke-zinc-300/70" filter="url(#softShadow)">
                 <polygon points={pointsToString(poly.top)} fill={`url(#grad-${p.type}-top-${suffix})`} />
                 <polygon points={pointsToString(poly.side)} fill={`url(#grad-${p.type}-side-${suffix})`} />
                 <polygon points={pointsToString(poly.front)} fill={`url(#grad-${p.type}-front-${suffix})`} />
@@ -266,7 +271,7 @@ export default function LayoutView({ computed, theme }) {
                   x={poly.labelX}
                   y={poly.labelY}
                   fontSize="9"
-                  className="fill-slate-700/90 dark:fill-slate-200/90"
+                  className="fill-zinc-800/90 dark:fill-zinc-100/90"
                 >
                   {p.type}
                 </text>
