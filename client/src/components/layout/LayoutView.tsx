@@ -60,7 +60,19 @@ function shade(hex: string, amount: number) {
   return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
 }
 
-export default function LayoutView({ computed, theme }: { computed: any; theme: "light" | "dark" }) {
+export default function LayoutView({
+  computed,
+  theme,
+  onExportPng,
+  onExportPdf,
+  exportDisabled
+}: {
+  computed: any;
+  theme: "light" | "dark";
+  onExportPng?: () => void;
+  onExportPdf?: () => void;
+  exportDisabled?: boolean;
+}) {
   const layout = computed?.layout ?? {
     placements: [],
     siteWidthFt: 0,
@@ -90,7 +102,42 @@ export default function LayoutView({ computed, theme }: { computed: any; theme: 
               : `Set device counts to generate a layout (max width ${maxWidthFt}ft).`}
           </div>
         </div>
-        <div className="text-xs text-zinc-500 dark:text-[#AAB6C9]">Tip: Zoom browser for bigger view</div>
+        <div className="flex flex-col items-end gap-2 text-xs text-zinc-500 dark:text-[#AAB6C9]">
+          <div>Tip: Zoom browser for bigger view</div>
+          {onExportPng && onExportPdf && (
+            <div className="relative">
+              <details className="group">
+                <summary className="list-none rounded-lg border border-zinc-300 dark:border-[#2E3E5C] bg-white dark:bg-[#0B1525] text-zinc-700 dark:text-[#D5DEEB] px-2.5 py-1.5 text-xs font-medium hover:bg-zinc-50 dark:hover:bg-[#16253A] cursor-pointer">
+                  Export
+                </summary>
+                <div className="absolute right-0 mt-2 w-44 rounded-xl border border-zinc-200 dark:border-[#26334A] bg-white dark:bg-[#0B1525] shadow-lg overflow-hidden z-50">
+                  <button
+                    disabled={exportDisabled}
+                    onClick={(e) => {
+                      (document.activeElement as any)?.blur?.();
+                      (e.currentTarget.closest("details") as any)?.removeAttribute?.("open");
+                      onExportPng();
+                    }}
+                    className="w-full text-left px-3 py-2 text-sm text-zinc-700 dark:text-[#D5DEEB] hover:bg-zinc-50 dark:hover:bg-[#16253A] disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    Export PNG
+                  </button>
+                  <button
+                    disabled={exportDisabled}
+                    onClick={(e) => {
+                      (document.activeElement as any)?.blur?.();
+                      (e.currentTarget.closest("details") as any)?.removeAttribute?.("open");
+                      onExportPdf();
+                    }}
+                    className="w-full text-left px-3 py-2 text-sm text-zinc-700 dark:text-[#D5DEEB] hover:bg-zinc-50 dark:hover:bg-[#16253A] disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    Export PDF (Print)
+                  </button>
+                </div>
+              </details>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="rounded-xl border border-zinc-200 dark:border-[#26334A] bg-zinc-50 dark:bg-[#0E1A2B]">
@@ -214,4 +261,3 @@ export default function LayoutView({ computed, theme }: { computed: any; theme: 
     </div>
   );
 }
-

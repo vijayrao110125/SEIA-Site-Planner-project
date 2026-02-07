@@ -11,6 +11,9 @@ export default function DashboardScreen({
   showParticles,
   onToggleTheme,
   onToggleParticles,
+  onExportPng,
+  onExportPdf,
+  exportDisabled,
   onSignOut,
   sessions,
   activeSessionId,
@@ -33,6 +36,9 @@ export default function DashboardScreen({
   showParticles: boolean;
   onToggleTheme: () => void;
   onToggleParticles: () => void;
+  onExportPng: () => void;
+  onExportPdf: () => void;
+  exportDisabled?: boolean;
   onSignOut: () => void;
   sessions: Array<{ id: string; name: string }>;
   activeSessionId: string;
@@ -172,7 +178,7 @@ export default function DashboardScreen({
           </section>
 
           <section className="lg:col-span-2">
-            <LayoutView computed={computed} theme={theme} />
+            <LayoutView computed={computed} theme={theme} onExportPng={onExportPng} onExportPdf={onExportPdf} exportDisabled={exportDisabled} />
           </section>
         </main>
 

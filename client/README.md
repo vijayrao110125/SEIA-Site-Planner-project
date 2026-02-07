@@ -43,6 +43,11 @@ server: {
 - The auth token is stored in `localStorage` under `seia:token`.
 - Requests to session endpoints include `Authorization: Bearer <token>`.
 
+## Reporting export
+- Dashboard → `Export` menu:
+  - **Export PNG** downloads a report image (summary + layout).
+  - **Export PDF (Print)** opens the browser print dialog; choose “Save as PDF”.
+
 ## Build
 - `npm --prefix client run build`
 

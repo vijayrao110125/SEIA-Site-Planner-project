@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { apiDelete, apiGet, apiPost, apiPut } from "./api";
 import PageShell from "./components/layout/PageShell";
 import AuthScreen from "./screens/AuthScreen";
 import DashboardScreen from "./screens/DashboardScreen";
 import DeleteSessionModal from "./modals/DeleteSessionModal";
 import SaveSessionModal from "./modals/SaveSessionModal";
+import ReportView from "./components/report/ReportView";
 import {
   AUTH_TOKEN_KEY,
   BATTERY_TYPES,
@@ -14,6 +15,7 @@ import {
   lastSessionKey
 } from "./lib/constants";
 import { safeGet, safeRemove, safeSet } from "./lib/storage";
+import { exportReportPdf, exportReportPng } from "./lib/reportExport";
 
 type User = { id: string; email: string; name?: string | null };
 type Catalog = Record<string, any>;
@@ -57,6 +59,10 @@ export default function App() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState("");
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [exporting, setExporting] = useState(false);
+  const [reportGeneratedAtIso, setReportGeneratedAtIso] = useState(() => new Date().toISOString());
+
+  const reportRef = useRef<HTMLDivElement | null>(null);
 
   const batteryCount = useMemo(
     () => BATTERY_TYPES.reduce((s, t) => s + (Number(counts[t]) || 0), 0),
@@ -135,6 +141,62 @@ export default function App() {
     setIsDeleteOpen(false);
     setDeleteTargetId("");
     setDeleteConfirmText("");
+  }
+
+  async function exportPng() {
+    if (!computed) {
+      setError("Compute a layout first, then export.");
+      return;
+    }
+    if (!reportRef.current) return;
+    setExporting(true);
+    setError("");
+    const generatedAtIso = new Date().toISOString();
+    setReportGeneratedAtIso(generatedAtIso);
+    try {
+      const sessionName = sessions.find((s) => s.id === activeSessionId)?.name ?? "";
+      await exportReportPng({
+        reportElement: reportRef.current,
+        title: `seia_report_${sessionName || "unsaved"}`,
+        user,
+        session: activeSessionId ? { id: activeSessionId, name: sessionName } : null,
+        generatedAtIso,
+        computed,
+        catalog
+      });
+    } catch (e: any) {
+      setError(String(e?.message ?? e));
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  async function exportPdf() {
+    if (!computed) {
+      setError("Compute a layout first, then export.");
+      return;
+    }
+    if (!reportRef.current) return;
+    setExporting(true);
+    setError("");
+    const generatedAtIso = new Date().toISOString();
+    setReportGeneratedAtIso(generatedAtIso);
+    try {
+      const sessionName = sessions.find((s) => s.id === activeSessionId)?.name ?? "";
+      await exportReportPdf({
+        reportElement: reportRef.current,
+        title: `seia_report_${sessionName || "unsaved"}`,
+        user,
+        session: activeSessionId ? { id: activeSessionId, name: sessionName } : null,
+        generatedAtIso,
+        computed,
+        catalog
+      });
+    } catch (e: any) {
+      setError(String(e?.message ?? e));
+    } finally {
+      setExporting(false);
+    }
   }
 
   function toggleAuthMode() {
@@ -388,6 +450,9 @@ export default function App() {
           showParticles={showParticles}
           onToggleTheme={toggleTheme}
           onToggleParticles={toggleParticles}
+          onExportPng={exportPng}
+          onExportPdf={exportPdf}
+          exportDisabled={exporting}
           onSignOut={signOut}
           sessions={sessions}
           activeSessionId={activeSessionId}
@@ -404,6 +469,17 @@ export default function App() {
           transformerCount={transformerCount}
           computed={computed}
         >
+          <div className="fixed left-[-10000px] top-0" aria-hidden="true">
+            <ReportView
+              ref={reportRef}
+              user={user}
+              session={activeSessionId ? { id: activeSessionId, name: sessions.find((s) => s.id === activeSessionId)?.name || "" } : null}
+              generatedAtIso={reportGeneratedAtIso}
+              computed={computed}
+              catalog={catalog}
+            />
+          </div>
+
           {isSaveOpen && (
             <SaveSessionModal
               status={status}
@@ -430,4 +506,3 @@ export default function App() {
     </div>
   );
 }
-
