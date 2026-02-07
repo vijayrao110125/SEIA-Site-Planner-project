@@ -13,7 +13,13 @@ export const EMPTY_COUNTS: Record<(typeof BATTERY_TYPES)[number], number> = {
   PowerPack: 0
 };
 
-export const API_BASE = (import.meta.env.VITE_API_BASE || "").trim().replace(/\/+$/, "");
+const runtimeApiBase = (globalThis as any).__SEIA_API_BASE__;
+export const API_BASE = (
+  (typeof runtimeApiBase === "string" ? runtimeApiBase : "") ||
+  (import.meta.env.VITE_API_BASE || "")
+)
+  .trim()
+  .replace(/\/+$/, "");
 export const API_FETCH_TIMEOUT_MS = 10000;
 
 export const LAYOUT_TYPE_STYLE = {
@@ -38,4 +44,3 @@ export const LAYOUT_TYPE_STYLE = {
     dark: { top: "#e31b23", front: "#c9151c", side: "#a90f15" }
   }
 } as const;
-

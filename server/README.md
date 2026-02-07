@@ -35,11 +35,18 @@ From repo root:
 
 ## Deployment (Render)
 Typical settings:
-- Build command: `npm --prefix server i && npm --prefix server run build`
-- Start command: `npm --prefix server start`
+- If **Root Directory = `server`**:
+  - Build command: `npm install && npm run build`
+  - Start command: `npm start`
+- If **Root Directory = repo root**:
+  - Build command: `npm --prefix server i && npm --prefix server run build`
+  - Start command: `npm --prefix server start`
 - Env vars:
   - `MONGODB_URI`
   - `AUTH_TOKEN_KEY` (required in production)
+
+Important:
+- Don’t run `node index.ts` on Render. Node can’t execute TypeScript; the server must be built to `dist/` and started via `npm start` (which runs `node dist/index.js`).
 
 ## Authentication
 - `POST /api/auth/register` requires `name`, `email`, `password` and returns:
@@ -87,3 +94,4 @@ Implementation notes:
 
 ## Notes
 - `AUTH_TOKEN_KEY` in production should be a long, random secret string (rotating it invalidates existing tokens).
+- TypeScript + Node ESM note: server `.ts` files intentionally import local modules using `.js` specifiers (for example `import "./config.js"`). This is required so the emitted `dist/*.js` files run correctly under Node ESM.

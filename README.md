@@ -31,28 +31,43 @@ Full‑stack app to configure Tesla battery site layouts, compute totals, and sa
 
 ## Architecture (high‑level)
 ```
-┌───────────────┐      HTTPS       ┌────────────────────────┐
-│   Browser     │ ───────────────▶ │  Client Static Site     │
-│ (React + UI)  │                  │      (Netlify)          │
-└───────┬───────┘                  └───────────┬─────────────┘
-        │    API (fetch /api/*)                │
-        └──────────────────────────────────────▶
-                                   ┌────────────────────────┐
-                                   │   Server (Express)     │
-                                   │  Render Web Service    │
-                                   └───────────┬────────────┘
-                                               │
-                                               │ MongoDB Atlas
-                                               ▼
-                                      ┌──────────────────┐
-                                      │   MongoDB DB     │
-                                      └──────────────────┘
+                     (static assets)
+┌─────────────────┐  GET /           ┌──────────────────────────┐
+│ Browser (React) │ ───────────────▶ │ Netlify (client/dist)     │
+│  http://:8000   │                  │ serves HTML/CSS/JS        │
+└───────┬─────────┘                  └─────────────┬────────────┘
+        │                                         │
+        │ fetch() API calls                       │ (JS runs in browser)
+        │ Authorization: Bearer <token>           │
+        ▼                                         ▼
+┌───────────────────────────────────────────────────────────────┐
+│ Render Web Service (Express API)                               │
+│  - /api/auth/*     login/register/me                           │
+│  - /api/catalog    device definitions                           │
+│  - /api/compute    totals + derived transformers + layout       │
+│  - /api/sessions/* save/load user-scoped sessions               │
+└───────────────┬───────────────────────────────────────────────┘
+                │
+                │ MongoDB Atlas (persistent storage)
+                ▼
+        ┌──────────────────────────┐
+        │ MongoDB collections       │
+        │  - users                  │
+        │  - sessions (per user)    │
+        └──────────────────────────┘
+
+Local dev (proxy mode):
+┌─────────────────┐      proxies /api/* to       ┌──────────────────┐
+│ Vite dev server │ ───────────────────────────▶ │ Express API :3001 │
+│ http://:8000    │                               └──────────────────┘
+└─────────────────┘
 ```
 Notes:
 - In local dev, you can either:
   - use Vite’s proxy (`/api` → server), or
   - set `VITE_API_BASE` to call the server directly.
 - In static hosting, set `VITE_API_BASE` to your server URL.
+- Server TypeScript runs as Node ESM, so server source imports intentionally use `.js` specifiers for local modules to match the emitted `server/dist/*.js`.
 
 ## Requirements
 - Node.js 20.19+ or 22.12+ (required by Vite 7)
@@ -94,8 +109,12 @@ Notes:
    - `AUTH_TOKEN_KEY` (required in production)
    - optional: `MONGODB_DB`, `MONGODB_COLLECTION`, `MONGODB_USERS_COLLECTION`
 3. Set commands:
-   - **Build:** `npm --prefix server i`
-   - **Start:** `npm --prefix server start`
+   - If **Root Directory = `server`**:
+     - **Build:** `npm install && npm run build`
+     - **Start:** `npm start`
+   - If **Root Directory = repo root**:
+     - **Build:** `npm --prefix server i && npm --prefix server run build`
+     - **Start:** `npm --prefix server start`
 
 ### Frontend (Netlify)
 1. Create a **Netlify site** from this repo.
@@ -115,3 +134,18 @@ Two common setups:
    - Create a Render Deploy Hook and a Netlify Build Hook.
    - Store both hook URLs as GitHub repo secrets (for example `RENDER_DEPLOY_HOOK_URL` and `NETLIFY_BUILD_HOOK_URL`).
    - Example workflow:
+
+## Desktop (Electron)
+This repo includes an Electron wrapper that runs the app as a desktop application.
+
+### Dev
+Runs server + client dev servers and then launches Electron once `http://127.0.0.1:8000` is reachable:
+- `npm run desktop:dev`
+
+### Build (packaged app)
+Builds `server/dist` + `client/dist`, then packages an Electron app:
+- `npm run desktop:build`
+
+Notes:
+- Packaged builds embed the Express API server and run it on a random local port.
+- Electron passes that API base to the renderer via `window.__SEIA_API_BASE__` (see `client/src/lib/constants.ts`).

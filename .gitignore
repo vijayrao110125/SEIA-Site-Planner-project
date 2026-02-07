@@ -4,6 +4,8 @@ server/node_modules/
 
 dist/
 client/dist/
+server/dist/
+dist-electron/
 
 .env
 .env.*
