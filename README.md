@@ -91,4 +91,3 @@ Notes:
 2. Set `MONGODB_URI` in Render Environment.
 3. Set `AUTH_TOKEN_KEY` in Render Environment.
 3. Deploy. The server serves the built client in production.
-

@@ -47,7 +47,7 @@ Implementation notes:
 - `PUT /api/sessions/:id` — update session (requires auth)
 - `DELETE /api/sessions/:id` — delete session (requires auth)
 
-## Data model (MongoDB)
+## Data model
 - `users` collection:
   - `id` (string), `email`, `emailNormalized` (unique), `passwordHash`, timestamps
 - `sessions` collection:
