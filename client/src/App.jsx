@@ -278,14 +278,6 @@ export default function App() {
 
             <div className="flex flex-col lg:items-end gap-2 w-full lg:w-auto">
               <button
-                onClick={() => navigate("/3d", { state: { computed, theme } })}
-                className="rounded-xl bg-indigo-600 text-white px-4 py-2 text-sm font-medium hover:bg-indigo-700"
-              >
-                View 3D Layout
-              </button>
-
-
-              <button
                 onClick={toggleTheme}
                 className="group inline-flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300 self-start lg:self-auto"
                 aria-label="Toggle dark mode"
@@ -382,7 +374,11 @@ export default function App() {
           </section>
 
           <section className="lg:col-span-2">
-            <LayoutView computed={computed} theme={theme} />
+            <LayoutView
+              computed={computed}
+              theme={theme}
+              onView3D={() => navigate("/3d", { state: { computed, theme } })}
+            />
           </section>
         </main>
 

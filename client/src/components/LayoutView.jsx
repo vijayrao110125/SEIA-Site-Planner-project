@@ -63,7 +63,7 @@ function shade(hex, amount) {
   return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
 }
 
-export default function LayoutView({ computed, theme }) {
+export default function LayoutView({ computed, theme, onView3D }) {
   if (!computed) return null;
 
   const { layout } = computed;
@@ -88,8 +88,18 @@ export default function LayoutView({ computed, theme }) {
             Max width: {maxWidthFt}ft • Current width: {siteWidthFt.toFixed(0)}ft
           </div>
         </div>
-        <div className="text-xs text-slate-500 dark:text-slate-400">
-          Tip: Zoom browser for bigger view
+        <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-center">
+          <button
+            type="button"
+            onClick={onView3D}
+            disabled={typeof onView3D !== "function"}
+            className="rounded-xl bg-indigo-600 text-white px-3 py-1.5 text-xs font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            View 3D Layout
+          </button>
+          <div className="text-xs text-slate-500 dark:text-slate-400">
+            Tip: Zoom browser for bigger view
+          </div>
         </div>
       </div>
 
