@@ -5,6 +5,7 @@ import path from "path";
 import fs from "fs";
 
 const url = process.env.ELECTRON_DEV_URL || "http://127.0.0.1:8000";
+const apiHealthUrl = process.env.ELECTRON_API_HEALTH_URL || "http://127.0.0.1:3001/api/health";
 const timeoutMs = Number(process.env.ELECTRON_WAIT_TIMEOUT_MS || 60_000);
 const pollEveryMs = 500;
 
@@ -36,6 +37,8 @@ async function waitForUrl(targetUrl, ms) {
 async function main() {
   console.log(`[ELECTRON] Waiting for renderer: ${url}`);
   await waitForUrl(url, timeoutMs);
+  console.log(`[ELECTRON] Waiting for API: ${apiHealthUrl}`);
+  await waitForUrl(apiHealthUrl, timeoutMs);
 
   const electronBin = process.platform === "win32" ? "electron.cmd" : "electron";
   const electronPath = path.join(process.cwd(), "node_modules", ".bin", electronBin);

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "dist/index.js",
   "scripts": {
-    "dev": "tsc -p tsconfig.json && (tsc -p tsconfig.json -w --preserveWatchOutput & node --watch dist/index.js)",
+    "dev": "node dev.mjs",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "start": "NODE_ENV=production node dist/index.js"
