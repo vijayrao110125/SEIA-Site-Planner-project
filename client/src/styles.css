@@ -2,3 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 :root { color-scheme: light dark; }
+
+.stars-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0; /* keep visible, but behind foreground */
+  pointer-events: none;
+}
+
+.stars-canvas canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+.foreground {
+  position: relative;
+  z-index: 10;
+}
