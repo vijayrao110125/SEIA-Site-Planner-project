@@ -59,7 +59,7 @@ export default function DashboardScreen({
   return (
     <>
       <div className="foreground relative z-10">
-        <header className="border-b border-zinc-200 dark:border-[#26334A] bg-white/80 dark:bg-[#0B1525]/70 backdrop-blur">
+        <header className="relative border-b border-zinc-200 dark:border-[#26334A] bg-white/80 dark:bg-[#0B1525]/70 backdrop-blur">
           <div className="mx-auto max-w-6xl px-4 py-4 flex flex-col lg:flex-row lg:items-start justify-between gap-4">
             <div className="lg:max-w-xl">
               <h1 className="text-xl font-semibold text-zinc-900 dark:text-[#E9F0FA]">SEIA Site Planner</h1>
@@ -72,51 +72,53 @@ export default function DashboardScreen({
               </div>
             </div>
 
-            <div className="flex flex-col lg:items-end gap-2 w-full lg:w-auto">
-              <div className="flex items-center justify-end gap-2 w-full">
-                <button
-                  onClick={onToggleTheme}
-                  className="group inline-flex items-center gap-2 text-sm font-medium text-zinc-600 dark:text-[#C2CDDD]"
-                  aria-label="Toggle dark mode"
-                >
-                  <span className="relative inline-flex h-6 w-6 items-center justify-center" aria-hidden="true">
-                    {/* Sun */}
-                    <svg
-                      viewBox="0 0 24 24"
-                      className={`absolute h-5 w-5 transition-all ${
-                        theme === "dark" ? "opacity-0 scale-90" : "opacity-100 scale-100"
-                      }`}
-                    >
-                      <path
-                        className="fill-current"
-                        d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12zm0-16h1.5V5H12V2zm0 17h1.5v3H12v-3zM4.22 5.64 5.64 4.22 7.76 6.34 6.34 7.76 4.22 5.64zm12.02 12.02 1.42-1.42 2.12 2.12-1.42 1.42-2.12-2.12zM2 10.5h3v1.5H2v-1.5zm17 0h3v1.5h-3v-1.5zM4.22 18.36l2.12-2.12 1.42 1.42-2.12 2.12-1.42-1.42zM16.24 6.34l2.12-2.12 1.42 1.42-2.12 2.12-1.42-1.42z"
+            <div className="flex flex-col gap-2 w-full lg:flex-1 lg:items-end lg:pt-12">
+              <div className="flex flex-col items-end gap-2 w-full lg:absolute lg:right-4 lg:top-4 lg:w-auto">
+                <div className="flex items-center justify-end gap-2 w-full lg:w-auto">
+                  <button
+                    onClick={onToggleTheme}
+                    className="group inline-flex items-center gap-2 text-sm font-medium text-zinc-600 dark:text-[#C2CDDD]"
+                    aria-label="Toggle dark mode"
+                  >
+                    <span className="relative inline-flex h-6 w-6 items-center justify-center" aria-hidden="true">
+                      {/* Sun */}
+                      <svg
+                        viewBox="0 0 24 24"
+                        className={`absolute h-5 w-5 transition-all ${
+                          theme === "dark" ? "opacity-0 scale-90" : "opacity-100 scale-100"
+                        }`}
+                      >
+                        <path
+                          className="fill-current"
+                          d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12zm0-16h1.5V5H12V2zm0 17h1.5v3H12v-3zM4.22 5.64 5.64 4.22 7.76 6.34 6.34 7.76 4.22 5.64zm12.02 12.02 1.42-1.42 2.12 2.12-1.42 1.42-2.12-2.12zM2 10.5h3v1.5H2v-1.5zm17 0h3v1.5h-3v-1.5zM4.22 18.36l2.12-2.12 1.42 1.42-2.12 2.12-1.42-1.42zM16.24 6.34l2.12-2.12 1.42 1.42-2.12 2.12-1.42-1.42z"
+                        />
+                      </svg>
+                      {/* Moon */}
+                      <svg
+                        viewBox="0 0 24 24"
+                        className={`absolute h-5 w-5 transition-all ${
+                          theme === "dark" ? "opacity-100 scale-100" : "opacity-0 scale-90"
+                        }`}
+                      >
+                        <path className="fill-current" d="M21 14.5A8.5 8.5 0 0 1 9.5 3a8.5 8.5 0 1 0 11.5 11.5z" />
+                      </svg>
+                    </span>
+                    <span className="relative inline-flex h-6 w-11 items-center rounded-full border border-zinc-300 dark:border-[#2E3E5C] bg-zinc-200 dark:bg-[#16253A] transition-colors">
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                          theme === "dark" ? "translate-x-5" : "translate-x-1"
+                        }`}
                       />
-                    </svg>
-                    {/* Moon */}
-                    <svg
-                      viewBox="0 0 24 24"
-                      className={`absolute h-5 w-5 transition-all ${
-                        theme === "dark" ? "opacity-100 scale-100" : "opacity-0 scale-90"
-                      }`}
-                    >
-                      <path className="fill-current" d="M21 14.5A8.5 8.5 0 0 1 9.5 3a8.5 8.5 0 1 0 11.5 11.5z" />
-                    </svg>
-                  </span>
-                  <span className="relative inline-flex h-6 w-11 items-center rounded-full border border-zinc-300 dark:border-[#2E3E5C] bg-zinc-200 dark:bg-[#16253A] transition-colors">
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
-                        theme === "dark" ? "translate-x-5" : "translate-x-1"
-                      }`}
-                    />
-                  </span>
-                </button>
+                    </span>
+                  </button>
 
-                <button
-                  onClick={onToggleParticles}
-                  className="rounded-xl border border-zinc-300 dark:border-[#2E3E5C] bg-white dark:bg-[#0B1525] text-zinc-700 dark:text-[#D5DEEB] px-3 py-2 text-sm font-medium hover:bg-zinc-50 dark:hover:bg-[#16253A]"
-                >
-                  {showParticles ? "Animation: On" : "Animation: Off"}
-                </button>
+                  <button
+                    onClick={onToggleParticles}
+                    className="rounded-xl border border-zinc-300 dark:border-[#2E3E5C] bg-white dark:bg-[#0B1525] text-zinc-700 dark:text-[#D5DEEB] px-3 py-2 text-sm font-medium hover:bg-zinc-50 dark:hover:bg-[#16253A]"
+                  >
+                    {showParticles ? "Animation: On" : "Animation: Off"}
+                  </button>
+                </div>
 
                 <button
                   onClick={onSignOut}
