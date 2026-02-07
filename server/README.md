@@ -6,17 +6,17 @@ API for:
 - storing user‑scoped sessions in MongoDB
 
 ## Project structure
-- `server/index.js` — server entrypoint (creates app + starts listening)
-- `server/createApp.js` — Express app factory (mounts routers under `/api`)
-- `server/config.js` — runtime config (`PORT`, token TTL, `AUTH_TOKEN_KEY`, compute constants)
-- `server/env.js` — loads environment from `server/.env` (and process env)
+- `server/index.ts` — server entrypoint (creates app + starts listening)
+- `server/createApp.ts` — Express app factory (mounts routers under `/api`)
+- `server/config.ts` — runtime config (`PORT`, token TTL, `AUTH_TOKEN_KEY`, compute constants)
+- `server/env.ts` — loads environment from `server/.env` (and process env)
 - `server/routes/` — API route handlers (`auth`, `sessions`, `compute`, `catalog`, `health`)
 - `server/middleware/` — Express middleware (`requireAuth`)
 - `server/services/` — domain logic (`computeAll` for totals + layout)
 - `server/auth/` — password hashing + token helpers
-- `server/db.js` — DB façade (currently re-exports Mongo implementation)
-- `server/db-mongo.js` — MongoDB implementation (collections + indexes + CRUD)
-- `server/catalog.js` — device catalog definitions
+- `server/db.ts` — DB façade (currently re-exports Mongo implementation)
+- `server/db-mongo.ts` — MongoDB implementation (collections + indexes + CRUD)
+- `server/catalog.ts` — device catalog definitions
 
 ## Env Vars
 You can provide these via a `.env` file or environment settings.
@@ -26,6 +26,7 @@ You can provide these via a `.env` file or environment settings.
 - `MONGODB_USERS_COLLECTION` (optional, default `users`)
 - `AUTH_TOKEN_KEY` (recommended; required in production)
 - `PORT` (optional, default `3001`)
+- `HOST` (optional; defaults to `127.0.0.1` in dev and `0.0.0.0` in production)
 
 ## Dev
 From repo root:
@@ -34,8 +35,8 @@ From repo root:
 
 ## Deployment (Render)
 Typical settings:
-- Build command: `npm install`
-- Start command: `node index.js`
+- Build command: `npm --prefix server i && npm --prefix server run build`
+- Start command: `npm --prefix server start`
 - Env vars:
   - `MONGODB_URI`
   - `AUTH_TOKEN_KEY` (required in production)
@@ -53,7 +54,7 @@ Typical settings:
 
 Implementation notes:
 - Passwords are hashed using `crypto.scrypt` with a random salt.
-- The token is an HMAC‑signed payload with an expiry (7 days) using `AUTH_TOKEN_KEY` (see `server/config.js`).
+- The token is an HMAC‑signed payload with an expiry (7 days) using `AUTH_TOKEN_KEY` (see `server/config.ts`).
 
 ## Endpoints
 - `GET /api/health` — simple health check
@@ -69,13 +70,13 @@ Implementation notes:
 - `DELETE /api/sessions/:id` — delete session (requires auth)
 
 ## Where things live
-- Auth routes: `server/routes/auth.js`
-- Session routes: `server/routes/sessions.js`
-- Compute routes: `server/routes/compute.js`
-- Auth middleware: `server/middleware/requireAuth.js`
-- Token signing/verification: `server/auth/tokens.js`
-- Password hashing: `server/auth/passwords.js`
-- Layout + totals logic: `server/services/compute.js`
+- Auth routes: `server/routes/auth.ts`
+- Session routes: `server/routes/sessions.ts`
+- Compute routes: `server/routes/compute.ts`
+- Auth middleware: `server/middleware/requireAuth.ts`
+- Token signing/verification: `server/auth/tokens.ts`
+- Password hashing: `server/auth/passwords.ts`
+- Layout + totals logic: `server/services/compute.ts`
 
 ## Data model
 - `users` collection:

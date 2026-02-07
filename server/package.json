@@ -1,12 +1,14 @@
 {
   "name": "server",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
-  "dev": "node index.js",
-  "start": "NODE_ENV=production node index.js"
- },
- "type": "module",
+    "dev": "tsc -p tsconfig.json && (tsc -p tsconfig.json -w --preserveWatchOutput & node --watch dist/index.js)",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "start": "NODE_ENV=production node dist/index.js"
+  },
+  "type": "module",
   "author": "",
   "license": "ISC",
   "description": "",
@@ -15,6 +17,12 @@
     "dotenv": "^16.6.1",
     "express": "^5.2.1",
     "mongodb": "^6.17.0",
-    "nanoid": "^5.1.6"
+    "nanoid": "^5.1.6",
+    "typescript": "^5.4.5"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.18",
+    "@types/express": "^5.0.3",
+    "@types/node": "^20.11.30"
   }
 }

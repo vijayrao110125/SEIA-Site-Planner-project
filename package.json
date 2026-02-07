@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "concurrently -n SERVER,CLIENT -c auto \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
     "install:all": "npm --prefix server i && npm --prefix client i",
-    "render-build": "npm --prefix server i && npm --prefix client i && npm --prefix client run build",
+    "render-build": "npm --prefix server i && npm --prefix server run build && npm --prefix client i && npm --prefix client run build",
     "build": "npm --prefix client run build",
     "start": "npm --prefix server start"
   },

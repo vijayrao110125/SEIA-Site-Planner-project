@@ -47,10 +47,10 @@ server: {
 - `npm --prefix client run build`
 
 ## Main Files
-- `src/App.jsx` — login gate + dashboard
-- `src/api.js` — fetch wrappers + auth header injection
+- `src/App.tsx` — login gate + dashboard
+- `src/api.ts` — fetch wrappers + auth header injection
 - `src/components/` — UI pieces
-- `src/components/layout/LayoutView.jsx` — layout SVG renderer
+- `src/components/layout/LayoutView.tsx` — layout SVG renderer
 - `src/styles.css` — Tailwind entry
 
 ## Deployment (Netlify)
