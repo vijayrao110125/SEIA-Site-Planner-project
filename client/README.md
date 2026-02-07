@@ -50,5 +50,13 @@ server: {
 - `src/App.jsx` — login gate + dashboard
 - `src/api.js` — fetch wrappers + auth header injection
 - `src/components/` — UI pieces
-- `src/components/LayoutView.jsx` — layout SVG renderer
+- `src/components/layout/LayoutView.jsx` — layout SVG renderer
 - `src/styles.css` — Tailwind entry
+
+## Deployment (Netlify)
+Typical settings:
+- Base directory: `client`
+- Build command: `npm i && npm run build`
+- Publish directory: `client/dist`
+- Environment:
+  - `VITE_API_BASE` = your backend origin (for example your Render service URL)

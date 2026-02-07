@@ -32,6 +32,14 @@ From repo root:
 - `npm --prefix server i`
 - `npm --prefix server run dev`
 
+## Deployment (Render)
+Typical settings:
+- Build command: `npm install`
+- Start command: `node index.js`
+- Env vars:
+  - `MONGODB_URI`
+  - `AUTH_TOKEN_KEY` (required in production)
+
 ## Authentication
 - `POST /api/auth/register` requires `name`, `email`, `password` and returns:
   - `token` (stored client‑side in `localStorage` as `seia:token`)

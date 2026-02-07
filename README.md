@@ -86,8 +86,32 @@ Notes:
 - Server: `npm --prefix server run dev`
 - Client: `npm --prefix client run dev`
 
-## Deployment (Render)
-1. Create a Render Web Service from this repo.
-2. Set `MONGODB_URI` in Render Environment.
-3. Set `AUTH_TOKEN_KEY` in Render Environment.
-3. Deploy. The server serves the built client in production.
+## Deployment (Render backend + Netlify frontend)
+### Backend (Render)
+1. Create a **Render Web Service** from this repo (or connect the `server/` folder as the service root).
+2. Set Render Environment variables:
+   - `MONGODB_URI`
+   - `AUTH_TOKEN_KEY` (required in production)
+   - optional: `MONGODB_DB`, `MONGODB_COLLECTION`, `MONGODB_USERS_COLLECTION`
+3. Set commands:
+   - **Build:** `npm --prefix server i`
+   - **Start:** `npm --prefix server start`
+
+### Frontend (Netlify)
+1. Create a **Netlify site** from this repo.
+2. Set Netlify build settings:
+   - **Base directory:** `client`
+   - **Build command:** `npm i && npm run build`
+   - **Publish directory:** `client/dist`
+3. Set Netlify environment variables:
+   - `VITE_API_BASE` = your Render backend origin (example `https://<your-service>.onrender.com`)
+
+## CI/CD (GitHub → Render + Netlify)
+Two common setups:
+1. **Recommended: GitHub integration (no custom GitHub Actions)**
+   - Connect your GitHub repo in Render and enable Auto-Deploy on `main`.
+   - Connect your GitHub repo in Netlify and enable deploy previews + production deploys from `main`.
+2. **GitHub Actions via deploy hooks (optional)**
+   - Create a Render Deploy Hook and a Netlify Build Hook.
+   - Store both hook URLs as GitHub repo secrets (for example `RENDER_DEPLOY_HOOK_URL` and `NETLIFY_BUILD_HOOK_URL`).
+   - Example workflow:
