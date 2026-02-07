@@ -31,7 +31,7 @@ export default function App() {
     const saved = safeGet(PARTICLES_KEY);
     if (saved === "0") return false;
     if (saved === "1") return true;
-    return true;
+    return false;
   });
 
   const [authReady, setAuthReady] = useState(false);
