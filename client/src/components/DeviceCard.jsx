@@ -1,4 +1,5 @@
 export default function DeviceCard({ type, def, value, onChange }) {
+  const displayValue = value ? value : "";
   return (
     <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-3 bg-white dark:bg-slate-900">
       <div className="flex items-start justify-between gap-3">
@@ -14,7 +15,8 @@ export default function DeviceCard({ type, def, value, onChange }) {
           className="w-20 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-slate-300 dark:focus:ring-slate-600"
           type="number"
           min="0"
-          value={value}
+          placeholder="0"
+          value={displayValue}
           onChange={(e) => onChange(e.target.value)}
         />
       </div>
