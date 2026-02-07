@@ -138,6 +138,8 @@ Two common setups:
 ## Desktop (Electron)
 This repo includes an Electron wrapper that runs the app as a desktop application.
 
+See `desktop/README.md` for details.
+
 ### Dev
 Runs server + client dev servers and then launches Electron once `http://127.0.0.1:8000` is reachable:
 - `npm run desktop:dev`
