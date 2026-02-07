@@ -15,7 +15,7 @@ export default function SessionsBar({
         value={activeSessionId}
         onChange={(e) => {
           const v = e.target.value;
-          if (v === "__new__") onNewSession();   // ✅ handle new session selection
+          if (v === "__new__") onNewSession();
           else onLoad(v);
         }}
       >
@@ -55,3 +55,4 @@ export default function SessionsBar({
     </div>
   );
 }
+

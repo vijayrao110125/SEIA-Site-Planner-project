@@ -1,6 +1,4 @@
-const API_BASE = (import.meta.env.VITE_API_BASE || "").trim().replace(/\/+$/, "");
-const AUTH_TOKEN_KEY = "seia:token";
-const FETCH_TIMEOUT_MS = 10000;
+import { API_BASE, API_FETCH_TIMEOUT_MS, AUTH_TOKEN_KEY } from "./lib/constants.js";
 
 function withBase(path) {
   // If `VITE_API_BASE` is unset, requests are same-origin.
@@ -27,7 +25,7 @@ function withAuth(headers = {}) {
 
 async function fetchWithTimeout(url, options = {}) {
   const controller = new AbortController();
-  const t = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  const t = setTimeout(() => controller.abort(), API_FETCH_TIMEOUT_MS);
   try {
     return await fetch(url, { ...options, signal: controller.signal });
   } finally {

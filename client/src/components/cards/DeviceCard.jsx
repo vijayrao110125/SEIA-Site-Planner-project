@@ -23,3 +23,4 @@ export default function DeviceCard({ type, def, value, onChange }) {
     </div>
   );
 }
+

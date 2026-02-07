@@ -5,6 +5,19 @@ API for:
 - user authentication
 - storing user‑scoped sessions in MongoDB
 
+## Project structure
+- `server/index.js` — server entrypoint (creates app + starts listening)
+- `server/createApp.js` — Express app factory (mounts routers under `/api`)
+- `server/config.js` — runtime config (`PORT`, token TTL, `AUTH_TOKEN_KEY`, compute constants)
+- `server/env.js` — loads environment from `server/.env` (and process env)
+- `server/routes/` — API route handlers (`auth`, `sessions`, `compute`, `catalog`, `health`)
+- `server/middleware/` — Express middleware (`requireAuth`)
+- `server/services/` — domain logic (`computeAll` for totals + layout)
+- `server/auth/` — password hashing + token helpers
+- `server/db.js` — DB façade (currently re-exports Mongo implementation)
+- `server/db-mongo.js` — MongoDB implementation (collections + indexes + CRUD)
+- `server/catalog.js` — device catalog definitions
+
 ## Env Vars
 You can provide these via a `.env` file or environment settings.
 - `MONGODB_URI` (required)
@@ -32,7 +45,7 @@ From repo root:
 
 Implementation notes:
 - Passwords are hashed using `crypto.scrypt` with a random salt.
-- The token is an HMAC‑signed payload with an expiry (7 days) using `AUTH_TOKEN_KEY`.
+- The token is an HMAC‑signed payload with an expiry (7 days) using `AUTH_TOKEN_KEY` (see `server/config.js`).
 
 ## Endpoints
 - `GET /api/health` — simple health check
@@ -47,6 +60,15 @@ Implementation notes:
 - `PUT /api/sessions/:id` — update session (requires auth)
 - `DELETE /api/sessions/:id` — delete session (requires auth)
 
+## Where things live
+- Auth routes: `server/routes/auth.js`
+- Session routes: `server/routes/sessions.js`
+- Compute routes: `server/routes/compute.js`
+- Auth middleware: `server/middleware/requireAuth.js`
+- Token signing/verification: `server/auth/tokens.js`
+- Password hashing: `server/auth/passwords.js`
+- Layout + totals logic: `server/services/compute.js`
+
 ## Data model
 - `users` collection:
   - `id` (string), `email`, `emailNormalized` (unique), `passwordHash`, timestamps
@@ -55,4 +77,4 @@ Implementation notes:
 - `payload` stores the full compute result (`counts`, `totals`, `layout`) so loading a session is instant.
 
 ## Notes
-- In production, the server serves the built client from `client/dist`.
+- `AUTH_TOKEN_KEY` in production should be a long, random secret string (rotating it invalidates existing tokens).

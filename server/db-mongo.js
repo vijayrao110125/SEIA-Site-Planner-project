@@ -1,7 +1,5 @@
-import dotenv from "dotenv";
 import { MongoClient } from "mongodb";
-
-dotenv.config();
+import "./env.js";
 
 const MONGODB_URI = process.env.MONGODB_URI;
 const DB_NAME = process.env.MONGODB_DB || "seia_site_planner";

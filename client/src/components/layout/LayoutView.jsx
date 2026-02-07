@@ -1,25 +1,4 @@
-const TYPE_STYLE = {
-  MegapackXL: {
-    light: { top: "#f2f2f2", front: "#e0e0e0", side: "#cfcfcf" },
-    dark: { top: "#2b2b2b", front: "#1f1f1f", side: "#141414" }
-  },
-  Megapack2: {
-    light: { top: "#f7f7f7", front: "#e9e9e9", side: "#d9d9d9" },
-    dark: { top: "#333333", front: "#262626", side: "#1a1a1a" }
-  },
-  Megapack: {
-    light: { top: "#ffffff", front: "#ededed", side: "#dddddd" },
-    dark: { top: "#3a3a3a", front: "#2c2c2c", side: "#1f1f1f" }
-  },
-  PowerPack: {
-    light: { top: "#f5f5f5", front: "#e6e6e6", side: "#d6d6d6" },
-    dark: { top: "#3b3b3b", front: "#2e2e2e", side: "#1f1f1f" }
-  },
-  Transformer: {
-    light: { top: "#e31b23", front: "#c9151c", side: "#a90f15" },
-    dark: { top: "#e31b23", front: "#c9151c", side: "#a90f15" }
-  }
-};
+import { LAYOUT_TYPE_STYLE } from "../../lib/constants.js";
 
 function pointsToString(points) {
   return points.map((p) => `${p[0]},${p[1]}`).join(" ");
@@ -93,17 +72,11 @@ export default function LayoutView({ computed, theme }) {
               : `Set device counts to generate a layout (max width ${maxWidthFt}ft).`}
           </div>
         </div>
-        <div className="text-xs text-zinc-500 dark:text-[#AAB6C9]">
-          Tip: Zoom browser for bigger view
-        </div>
+        <div className="text-xs text-zinc-500 dark:text-[#AAB6C9]">Tip: Zoom browser for bigger view</div>
       </div>
 
       <div className="rounded-xl border border-zinc-200 dark:border-[#26334A] bg-zinc-50 dark:bg-[#0E1A2B]">
-        <svg
-          viewBox={`0 0 ${wPx} ${hPx}`}
-          preserveAspectRatio="xMinYMin meet"
-          className="w-full h-auto"
-        >
+        <svg viewBox={`0 0 ${wPx} ${hPx}`} preserveAspectRatio="xMinYMin meet" className="w-full h-auto">
           <defs>
             <linearGradient id="bgFade" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={isDark ? "#0B1525" : "#f8fafc"} />
@@ -123,11 +96,17 @@ export default function LayoutView({ computed, theme }) {
               <feDropShadow dx="0" dy="2" stdDeviation="2" floodOpacity="0.25" />
             </filter>
             <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%">
-              <feDropShadow dx="0" dy="0" stdDeviation="2.5" floodOpacity="0.35" floodColor="#e31b23" />
+              <feDropShadow
+                dx="0"
+                dy="0"
+                stdDeviation="2.5"
+                floodOpacity="0.35"
+                floodColor="#e31b23"
+              />
             </filter>
 
             {Array.from(new Set(placements.map((p) => p.type))).map((type) => {
-              const palette = TYPE_STYLE[type] ?? TYPE_STYLE.Megapack;
+              const palette = LAYOUT_TYPE_STYLE[type] ?? LAYOUT_TYPE_STYLE.Megapack;
               const face = isDark ? palette.dark : palette.light;
               const top1 = shade(face.top, 16);
               const top2 = shade(face.top, -10);
@@ -137,7 +116,7 @@ export default function LayoutView({ computed, theme }) {
               const side2 = shade(face.side, -14);
               const suffix = isDark ? "d" : "l";
               return (
-                <g key={`${type}-${suffix}`}>
+                <g key={type}>
                   <linearGradient id={`grad-${type}-top-${suffix}`} x1="0" y1="0" x2="1" y2="1">
                     <stop offset="0%" stopColor={top1} />
                     <stop offset="100%" stopColor={top2} />
@@ -186,7 +165,6 @@ export default function LayoutView({ computed, theme }) {
 
           {placements.map((p) => {
             const poly = getIsoPolys({ ...p, pad, scale, isoX, isoY });
-            const palette = TYPE_STYLE[p.type] ?? TYPE_STYLE.Megapack;
             const suffix = isDark ? "d" : "l";
             const ventX = poly.px + 6;
             const ventY = poly.py + Math.max(6, poly.dPx * 0.2);
@@ -199,10 +177,17 @@ export default function LayoutView({ computed, theme }) {
             const labelW = Math.min(poly.wPx - 8, p.type.length * 4.6 + 10);
             const labelH = 12;
             return (
-              <g key={p.id} className="stroke-zinc-700/70 dark:stroke-zinc-300/70" filter="url(#softShadow)">
+              <g
+                key={p.id}
+                className="stroke-zinc-700/70 dark:stroke-zinc-300/70"
+                filter="url(#softShadow)"
+              >
                 <polygon points={pointsToString(poly.top)} fill={`url(#grad-${p.type}-top-${suffix})`} />
                 <polygon points={pointsToString(poly.side)} fill={`url(#grad-${p.type}-side-${suffix})`} />
-                <polygon points={pointsToString(poly.front)} fill={`url(#grad-${p.type}-front-${suffix})`} />
+                <polygon
+                  points={pointsToString(poly.front)}
+                  fill={`url(#grad-${p.type}-front-${suffix})`}
+                />
                 <polyline
                   points={pointsToString([poly.top[0], poly.top[1], poly.top[2]])}
                   className="stroke-white/50 dark:stroke-white/20"
@@ -267,12 +252,7 @@ export default function LayoutView({ computed, theme }) {
                   rx="3"
                   className="fill-white/70 dark:fill-black/40"
                 />
-                <text
-                  x={poly.labelX}
-                  y={poly.labelY}
-                  fontSize="9"
-                  className="fill-zinc-800/90 dark:fill-zinc-100/90"
-                >
+                <text x={poly.labelX} y={poly.labelY} fontSize="9" className="fill-zinc-800/90 dark:fill-zinc-100/90">
                   {p.type}
                 </text>
               </g>
