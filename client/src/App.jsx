@@ -318,9 +318,9 @@ export default function App() {
 
   if (!authReady) {
     return (
-      <div className="min-h-screen bg-zinc-50 dark:bg-black flex items-center justify-center p-6">
-        <div className="rounded-2xl bg-white dark:bg-zinc-950 shadow-sm border border-zinc-200 dark:border-zinc-800 p-6 w-full max-w-xl">
-          <div className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Loading…</div>
+      <div className="min-h-screen bg-zinc-50 dark:bg-[#0F1B2A] flex items-center justify-center p-6">
+        <div className="rounded-2xl bg-white dark:bg-[#111C2D] shadow-sm border border-zinc-200 dark:border-[#26334A] p-6 w-full max-w-xl">
+          <div className="text-xl font-semibold text-zinc-900 dark:text-[#E9F0FA]">Loading…</div>
         </div>
       </div>
     );
@@ -329,20 +329,20 @@ export default function App() {
   if (!user) {
     return (
       <div className={theme === "dark" ? "dark" : ""}>
-        <div className="min-h-screen bg-zinc-50 dark:bg-black flex items-center justify-center p-6">
-          <div className="rounded-2xl bg-white dark:bg-zinc-950 shadow-sm p-6 w-full max-w-md border border-zinc-200 dark:border-zinc-800">
+        <div className="min-h-screen bg-zinc-50 dark:bg-[#0F1B2A] flex items-center justify-center p-6">
+          <div className="rounded-2xl bg-white dark:bg-[#111C2D] shadow-sm p-6 w-full max-w-md border border-zinc-200 dark:border-[#26334A]">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <div className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
+                <div className="text-xl font-semibold text-zinc-900 dark:text-[#E9F0FA]">
                   {authMode === "login" ? "Sign in" : "Create account"}
                 </div>
-                <div className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+                <div className="text-sm text-zinc-500 dark:text-[#AAB6C9] mt-1">
                   Sign in to view and save your sessions.
                 </div>
               </div>
               <button
                 onClick={toggleTheme}
-                className="rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-200 px-3 py-2 text-sm font-medium"
+                className="rounded-xl border border-zinc-300 dark:border-[#2E3E5C] bg-white dark:bg-[#0B1525] text-zinc-700 dark:text-[#D5DEEB] px-3 py-2 text-sm font-medium"
               >
                 {theme === "dark" ? "Light" : "Dark"}
               </button>
@@ -351,7 +351,7 @@ export default function App() {
             <div className="mt-5 space-y-3">
               {authMode === "register" && (
                 <input
-                  className="w-full rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-700"
+                  className="w-full rounded-xl border border-zinc-300 dark:border-[#2E3E5C] bg-white dark:bg-[#0B1525] text-zinc-900 dark:text-[#E9F0FA] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-700"
                   placeholder="Full name"
                   value={authName}
                   onChange={(e) => setAuthName(e.target.value)}
@@ -361,7 +361,7 @@ export default function App() {
                 />
               )}
               <input
-                className="w-full rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-700"
+                className="w-full rounded-xl border border-zinc-300 dark:border-[#2E3E5C] bg-white dark:bg-[#0B1525] text-zinc-900 dark:text-[#E9F0FA] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-700"
                 placeholder="Email"
                 value={authEmail}
                 onChange={(e) => setAuthEmail(e.target.value)}
@@ -370,7 +370,7 @@ export default function App() {
                 }}
               />
               <input
-                className="w-full rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-700"
+                className="w-full rounded-xl border border-zinc-300 dark:border-[#2E3E5C] bg-white dark:bg-[#0B1525] text-zinc-900 dark:text-[#E9F0FA] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-700"
                 placeholder="Password"
                 type="password"
                 value={authPassword}
@@ -383,12 +383,12 @@ export default function App() {
 
             {authError && <div className="mt-3 text-sm text-red-500">{authError}</div>}
             {authStatus && (
-              <div className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">{authStatus}</div>
+              <div className="mt-3 text-sm text-zinc-500 dark:text-[#AAB6C9]">{authStatus}</div>
             )}
 
             <div className="mt-5 flex items-center justify-between gap-2">
               <button
-                className="text-sm text-zinc-600 dark:text-zinc-300 hover:underline"
+                className="text-sm text-zinc-600 dark:text-[#C2CDDD] hover:underline"
                 onClick={() => {
                   setAuthMode((m) => (m === "login" ? "register" : "login"));
                   setAuthError("");
@@ -414,9 +414,9 @@ export default function App() {
 
   if (!catalog) {
     return (
-      <div className="min-h-screen bg-zinc-50 dark:bg-black flex items-center justify-center p-6">
-        <div className="rounded-2xl bg-white dark:bg-zinc-950 shadow-sm border border-zinc-200 dark:border-zinc-800 p-6 w-full max-w-xl">
-          <div className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Loading…</div>
+      <div className="min-h-screen bg-zinc-50 dark:bg-[#0F1B2A] flex items-center justify-center p-6">
+        <div className="rounded-2xl bg-white dark:bg-[#111C2D] shadow-sm border border-zinc-200 dark:border-[#26334A] p-6 w-full max-w-xl">
+          <div className="text-xl font-semibold text-zinc-900 dark:text-[#E9F0FA]">Loading…</div>
           {error && <div className="mt-3 text-sm text-red-500">{error}</div>}
         </div>
       </div>
@@ -425,17 +425,17 @@ export default function App() {
 
   return (
     <div className={theme === "dark" ? "dark" : ""}>
-      <div className="min-h-screen bg-zinc-50 dark:bg-black">
-        <header className="border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-black/60 backdrop-blur">
+      <div className="min-h-screen bg-zinc-50 dark:bg-[#0F1B2A]">
+        <header className="border-b border-zinc-200 dark:border-[#26334A] bg-white/80 dark:bg-[#0B1525]/70 backdrop-blur">
           <div className="mx-auto max-w-6xl px-4 py-4 flex flex-col lg:flex-row lg:items-start justify-between gap-4">
 	            <div className="lg:max-w-xl">
-	              <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">SEIA Site Planner</h1>
-	              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+	              <h1 className="text-xl font-semibold text-zinc-900 dark:text-[#E9F0FA]">SEIA Site Planner</h1>
+	              <p className="text-sm text-zinc-500 dark:text-[#AAB6C9]">
 	                Configure devices → auto-add transformers → generate 100ft-max layout.
 	              </p>
-	              <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+	              <div className="text-xs text-zinc-500 dark:text-[#AAB6C9] mt-1">
 	                Signed in as{" "}
-	                <span className="font-medium text-zinc-700 dark:text-zinc-200">
+	                <span className="font-medium text-zinc-700 dark:text-[#D5DEEB]">
 	                  {user.name || user.email}
 	                </span>
 	              </div>
@@ -445,7 +445,7 @@ export default function App() {
 		              <div className="flex items-center justify-end gap-2 w-full">
 		                <button
 		                  onClick={toggleTheme}
-		                  className="group inline-flex items-center gap-2 text-sm font-medium text-zinc-600 dark:text-zinc-300"
+		                  className="group inline-flex items-center gap-2 text-sm font-medium text-zinc-600 dark:text-[#C2CDDD]"
 		                  aria-label="Toggle dark mode"
 		                >
 	                  <span className="relative inline-flex h-6 w-6 items-center justify-center" aria-hidden="true">
@@ -472,7 +472,7 @@ export default function App() {
 	                      />
 	                    </svg>
 	                  </span>
-		                  <span className="relative inline-flex h-6 w-11 items-center rounded-full border border-zinc-300 dark:border-zinc-700 bg-zinc-200 dark:bg-zinc-800 transition-colors">
+		                  <span className="relative inline-flex h-6 w-11 items-center rounded-full border border-zinc-300 dark:border-[#2E3E5C] bg-zinc-200 dark:bg-[#16253A] transition-colors">
 		                    <span
 		                      className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${theme === "dark" ? "translate-x-5" : "translate-x-1"
 		                        }`}
@@ -482,7 +482,7 @@ export default function App() {
 
 		                <button
 		                  onClick={signOut}
-		                  className="rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-200 px-3 py-2 text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800"
+		                  className="rounded-xl border border-zinc-300 dark:border-[#2E3E5C] bg-white dark:bg-[#0B1525] text-zinc-700 dark:text-[#D5DEEB] px-3 py-2 text-sm font-medium hover:bg-zinc-50 dark:hover:bg-[#16253A]"
 		                >
 		                  Sign out
 		                </button>
@@ -511,8 +511,8 @@ export default function App() {
 
 	        <main className="mx-auto max-w-6xl px-4 py-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
 	          <section className="lg:col-span-1 space-y-4">
-	            <div className="rounded-2xl bg-white dark:bg-zinc-950 shadow-sm border border-zinc-200 dark:border-zinc-800 p-4">
-	              <div className="text-sm font-semibold text-zinc-800 dark:text-zinc-100 mb-3">Device configuration</div>
+	            <div className="rounded-2xl bg-white dark:bg-[#111C2D] shadow-sm border border-zinc-200 dark:border-[#26334A] p-4">
+	              <div className="text-sm font-semibold text-zinc-800 dark:text-[#E9F0FA] mb-3">Device configuration</div>
 
               <div className="space-y-3">
                 {BATTERY_TYPES.map((type) => (
@@ -525,19 +525,19 @@ export default function App() {
                   />
                 ))}
 
-	                <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 p-3 bg-zinc-50 dark:bg-zinc-900">
+	                <div className="rounded-xl border border-zinc-200 dark:border-[#26334A] p-3 bg-zinc-50 dark:bg-[#0E1A2B]">
 	                  <div className="flex items-center justify-between">
 	                    <div>
-	                      <div className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">Transformer</div>
-	                      <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+	                      <div className="text-sm font-semibold text-zinc-800 dark:text-[#E9F0FA]">Transformer</div>
+	                      <div className="text-xs text-zinc-500 dark:text-[#AAB6C9] mt-0.5">
 	                        {catalog["Transformer"].w}ft × {catalog["Transformer"].d}ft • {catalog["Transformer"].energyMWh} MWh • ${catalog["Transformer"].cost.toLocaleString()}
 	                        {catalog["Transformer"].release ? ` • ${catalog["Transformer"].release}` : ""}
 	                      </div>
-	                      <div className="text-xs text-zinc-500 dark:text-zinc-400">
+	                      <div className="text-xs text-zinc-500 dark:text-[#AAB6C9]">
 	                        Rule: 1 transformer per 2 industrial batteries
 	                      </div>
 	                    </div>
-	                    <div className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{transformerCount}</div>
+	                    <div className="text-lg font-semibold text-zinc-900 dark:text-[#E9F0FA]">{transformerCount}</div>
 	                  </div>
 	                </div>
               </div>
@@ -552,7 +552,7 @@ export default function App() {
           </section>
         </main>
 
-	        <footer className="py-8 text-center text-xs text-zinc-500 dark:text-zinc-500">
+	        <footer className="py-8 text-center text-xs text-zinc-500 dark:text-[#8090AA]">
 	          Frontend and API running
 	        </footer>
 
@@ -563,16 +563,16 @@ export default function App() {
 	              onClick={closeSaveModal}
 	              aria-hidden="true"
 	            />
-	            <div className="relative w-full max-w-md mx-4 rounded-2xl bg-white dark:bg-zinc-950 shadow-xl border border-zinc-200 dark:border-zinc-800 p-5">
-	              <div className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+	            <div className="relative w-full max-w-md mx-4 rounded-2xl bg-white dark:bg-[#111C2D] shadow-xl border border-zinc-200 dark:border-[#26334A] p-5">
+	              <div className="text-base font-semibold text-zinc-900 dark:text-[#E9F0FA]">
 	                Save session
 	              </div>
-	              <div className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+	              <div className="text-sm text-zinc-500 dark:text-[#AAB6C9] mt-1">
 	                Give this configuration a name (required).
 	              </div>
 	              <input
 	                autoFocus
-	                className="mt-4 w-full rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-700"
+	                className="mt-4 w-full rounded-xl border border-zinc-300 dark:border-[#2E3E5C] bg-white dark:bg-[#0B1525] text-zinc-900 dark:text-[#E9F0FA] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-700"
 	                placeholder="e.g., Q1 buildout"
 	                value={newSessionName}
 	                onChange={(e) => setNewSessionName(e.target.value)}
@@ -584,7 +584,7 @@ export default function App() {
 	              {saveError && <div className="mt-3 text-sm text-red-500">{saveError}</div>}
 	              <div className="mt-4 flex items-center justify-end gap-2">
 	                <button
-	                  className="rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-200 px-3 py-2 text-sm font-medium"
+	                  className="rounded-xl border border-zinc-300 dark:border-[#2E3E5C] bg-white dark:bg-[#0B1525] text-zinc-700 dark:text-[#D5DEEB] px-3 py-2 text-sm font-medium"
 	                  onClick={closeSaveModal}
 	                >
 	                  Cancel
@@ -608,11 +608,11 @@ export default function App() {
 	              onClick={closeDeleteModal}
 	              aria-hidden="true"
 	            />
-	            <div className="relative w-full max-w-md mx-4 rounded-2xl bg-white dark:bg-zinc-950 shadow-xl border border-zinc-200 dark:border-zinc-800 p-5">
-	              <div className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+	            <div className="relative w-full max-w-md mx-4 rounded-2xl bg-white dark:bg-[#111C2D] shadow-xl border border-zinc-200 dark:border-[#26334A] p-5">
+	              <div className="text-base font-semibold text-zinc-900 dark:text-[#E9F0FA]">
 	                Delete session
 	              </div>
-	              <div className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+	              <div className="text-sm text-zinc-500 dark:text-[#AAB6C9] mt-1">
 	                This action cannot be undone. Type <span className="font-semibold">DELETE</span> to confirm removing{" "}
 	                <span className="font-semibold">
 	                  {sessions.find((s) => s.id === deleteTargetId)?.name || deleteTargetId}
@@ -621,7 +621,7 @@ export default function App() {
 	              </div>
 	              <input
 	                autoFocus
-	                className="mt-4 w-full rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-700"
+	                className="mt-4 w-full rounded-xl border border-zinc-300 dark:border-[#2E3E5C] bg-white dark:bg-[#0B1525] text-zinc-900 dark:text-[#E9F0FA] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-700"
 	                placeholder="Type DELETE"
 	                value={deleteConfirmText}
 	                onChange={(e) => setDeleteConfirmText(e.target.value)}
@@ -632,7 +632,7 @@ export default function App() {
 	              />
 	              <div className="mt-4 flex items-center justify-end gap-2">
 	                <button
-	                  className="rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-200 px-3 py-2 text-sm font-medium"
+	                  className="rounded-xl border border-zinc-300 dark:border-[#2E3E5C] bg-white dark:bg-[#0B1525] text-zinc-700 dark:text-[#D5DEEB] px-3 py-2 text-sm font-medium"
 	                  onClick={closeDeleteModal}
 	                >
 	                  Cancel

@@ -92,6 +92,3 @@ Notes:
 3. Set `AUTH_TOKEN_KEY` in Render Environment.
 3. Deploy. The server serves the built client in production.
 
-## Notes
-- Session data is stored in MongoDB and scoped to the signed‑in user.
-- If you have existing sessions created before user accounts (no `userId`), they won’t be visible until migrated/assigned.

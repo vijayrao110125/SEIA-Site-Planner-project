@@ -83,22 +83,22 @@ export default function LayoutView({ computed, theme }) {
   const hPx = displayLengthFt * scale + pad * 2 + isoY;
 
   return (
-    <div className="rounded-2xl bg-white dark:bg-zinc-950 shadow-sm border border-zinc-200 dark:border-zinc-800 p-4">
+    <div className="rounded-2xl bg-white dark:bg-[#111C2D] shadow-sm border border-zinc-200 dark:border-[#26334A] p-4">
       <div className="flex items-start justify-between gap-3 mb-3">
         <div>
-          <div className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">Site layout</div>
-          <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+          <div className="text-sm font-semibold text-zinc-800 dark:text-[#E9F0FA]">Site layout</div>
+          <div className="text-xs text-zinc-500 dark:text-[#AAB6C9] mt-0.5">
             {computed
               ? `Max width: ${maxWidthFt}ft • Current width: ${siteWidthFt.toFixed(0)}ft`
               : `Set device counts to generate a layout (max width ${maxWidthFt}ft).`}
           </div>
         </div>
-        <div className="text-xs text-zinc-500 dark:text-zinc-400">
+        <div className="text-xs text-zinc-500 dark:text-[#AAB6C9]">
           Tip: Zoom browser for bigger view
         </div>
       </div>
 
-      <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
+      <div className="rounded-xl border border-zinc-200 dark:border-[#26334A] bg-zinc-50 dark:bg-[#0E1A2B]">
         <svg
           viewBox={`0 0 ${wPx} ${hPx}`}
           preserveAspectRatio="xMinYMin meet"
@@ -106,13 +106,13 @@ export default function LayoutView({ computed, theme }) {
         >
           <defs>
             <linearGradient id="bgFade" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={isDark ? "#0b0b0b" : "#f8fafc"} />
-              <stop offset="100%" stopColor={isDark ? "#141414" : "#eef2f7"} />
+              <stop offset="0%" stopColor={isDark ? "#0B1525" : "#f8fafc"} />
+              <stop offset="100%" stopColor={isDark ? "#0F1B2A" : "#eef2f7"} />
             </linearGradient>
             <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
               <path
                 d="M 24 0 L 0 0 0 24"
-                className="stroke-zinc-200 dark:stroke-zinc-700"
+                className="stroke-zinc-200 dark:stroke-[#2E3E5C]"
                 strokeWidth="1"
                 fill="none"
                 opacity="0.6"
@@ -177,7 +177,7 @@ export default function LayoutView({ computed, theme }) {
             y={pad}
             width={maxWidthFt * scale}
             height={displayLengthFt * scale}
-            className="fill-none stroke-zinc-300 dark:stroke-zinc-600"
+            className="fill-none stroke-zinc-300 dark:stroke-[#3A4B6A]"
             strokeDasharray="6 4"
           />
           <text x={pad} y={12} className="fill-zinc-500 dark:fill-zinc-400" fontSize="10">
