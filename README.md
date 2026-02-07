@@ -96,6 +96,8 @@ Notes:
 - `npm run build` — build client
 - `npm run start` — run server in production
 - `npm run render-build` — install + build for Render
+- `npm test` — run server + client tests
+  - If you see `vitest: command not found`, run `npm run install:all` (or at least `npm --prefix client i`) to install client devDependencies.
 
 ## Running separately
 - Server: `npm --prefix server run dev`

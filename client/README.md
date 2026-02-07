@@ -27,7 +27,7 @@ Two supported modes:
    - Set `VITE_API_BASE` to your API origin (example `http://localhost:3001` or a Render URL).
    - Browser calls the API cross‑origin; the server enables CORS.
 
-Vite proxy config lives in `vite.config.js`:
+Vite proxy config lives in `vite.config.mjs`:
 ```js
 server: {
   proxy: {
@@ -45,6 +45,12 @@ server: {
 
 ## Build
 - `npm --prefix client run build`
+
+## Tests
+- `npm --prefix client run test` — watch mode
+- `npm --prefix client run test:run` — run once (CI)
+  - If `vitest` is missing, run `npm --prefix client i` to install devDependencies.
+ - Test files live in `client/tests/` and import components from `client/src/`.
 
 ## Main Files
 - `src/App.tsx` — login gate + dashboard

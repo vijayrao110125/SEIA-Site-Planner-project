@@ -33,6 +33,11 @@ From repo root:
 - `npm --prefix server i`
 - `npm --prefix server run dev`
 
+## Tests
+- `npm --prefix server run test`
+  - Builds TypeScript (`server/dist`) and runs Node’s built-in `node:test` runner.
+  - The included HTTP tests exercise `/api/health`, `/api/catalog`, and `/api/compute` and do not require MongoDB as long as you don’t call session endpoints.
+
 ## Deployment (Render)
 Typical settings:
 - If **Root Directory = `server`**:

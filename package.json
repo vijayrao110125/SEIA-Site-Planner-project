@@ -9,7 +9,8 @@
     "build": "npm --prefix client run build",
     "start": "npm --prefix server start",
     "desktop:dev": "concurrently -n SERVER,CLIENT,ELECTRON -c auto \"npm --prefix server run dev\" \"npm --prefix client run dev\" \"node desktop/wait-and-launch.mjs\"",
-    "desktop:build": "npm --prefix server run build && npm --prefix client run build && electron-builder"
+    "desktop:build": "npm --prefix server run build && npm --prefix client run build && electron-builder",
+    "test": "npm --prefix server run test && npm --prefix client run test:run"
   },
   "keywords": [],
   "author": "",
