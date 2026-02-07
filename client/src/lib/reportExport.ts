@@ -106,6 +106,56 @@ function drawKpiBox(
   drawText(ctx, value, x + 18, y + 76, { font: "700 30px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto", color: "#111827" });
 }
 
+function drawSummaryCard({
+  ctx,
+  x,
+  y,
+  w,
+  h,
+  items
+}: {
+  ctx: CanvasRenderingContext2D;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  items: Array<{ label: string; value: string }>;
+}) {
+  ctx.fillStyle = "#ffffff";
+  ctx.strokeStyle = "#e5e7eb";
+  ctx.lineWidth = 2;
+  drawRoundRect(ctx, x, y, w, h, 16);
+  ctx.fill();
+  ctx.stroke();
+
+  drawText(ctx, "Summary", x + 18, y + 34, {
+    font: "700 22px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto",
+    color: "#111827"
+  });
+
+  const cols = 2;
+  const rows = Math.ceil(items.length / cols);
+  const colW = (w - 36) / cols;
+  const rowH = 46;
+  const startY = y + 62;
+
+  for (let i = 0; i < items.length; i++) {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    if (row >= rows) break;
+    const ix = x + 18 + col * colW;
+    const iy = startY + row * rowH;
+    drawText(ctx, items[i].label, ix, iy + 14, {
+      font: "500 14px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto",
+      color: "#6b7280"
+    });
+    drawText(ctx, items[i].value, ix, iy + 36, {
+      font: "700 20px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto",
+      color: "#111827"
+    });
+  }
+}
+
 function openPrintWindow({ title, pngDataUrl }: { title: string; pngDataUrl: string }) {
   const w = window.open("", "_blank");
   if (!w) throw new Error("Pop-up blocked. Allow pop-ups to export PDF.");
@@ -215,6 +265,33 @@ function drawLayoutLabels({
   ctx.restore();
 }
 
+function buildDeviceDetailRows({
+  counts,
+  catalog
+}: {
+  counts: Record<string, unknown>;
+  catalog: Record<string, { w: number; d: number; energyMWh: number; cost: number; release: number | null }>;
+}) {
+  const order = ["MegapackXL", "Megapack2", "Megapack", "PowerPack", "Transformer"];
+  return order
+    .map((type) => {
+      const count = Number((counts as any)?.[type] ?? 0);
+      const def = (catalog as any)[type];
+      return { type, count, def };
+    })
+    .filter((r) => r.count > 0 && r.def);
+}
+
+function calcDeviceDetailsTableHeight(rowCount: number) {
+  // Based on the drawing offsets used below:
+  const rows = Math.max(0, rowCount);
+  if (rows <= 0) return 200;
+  // First data row baseline is at y = tableTop + 126, each next row baseline is +36.
+  // Add ~24px bottom padding so the last row doesn't touch the border.
+  const raw = 150 + (rows - 1) * 36;
+  return Math.max(200, raw);
+}
+
 export async function exportReportPng({
   reportElement,
   title,
@@ -236,6 +313,7 @@ export async function exportReportPng({
   const layout = computed?.layout ?? { siteWidthFt: 0, siteLengthFt: 0, siteAreaSqFt: 0, maxWidthFt: 100 };
   const counts = computed?.counts ?? {};
   const placements = layout?.placements ?? [];
+  const deviceRows = catalog ? buildDeviceDetailRows({ counts, catalog }) : [];
 
   const svg = requireSvg(reportElement);
   const svgString = serializeSvg(svg);
@@ -251,10 +329,16 @@ export async function exportReportPng({
 
   // Rough fixed header + KPI sections + table
   const headerH = 220;
-  const kpisH = 260;
-  const tableH = catalog ? 320 : 0;
+  const summaryH = 220;
+  const tableRowCount = Math.min(deviceRows.length, 7);
+  const tableH = catalog ? calcDeviceDetailsTableHeight(tableRowCount) : 0;
   const footerH = 80;
-  const H = headerH + kpisH + (tableH ? tableH + 30 : 40) + layoutH + footerH;
+  const TABLE_TOP_GAP = 24;
+  const GAP_NO_TABLE = 40;
+  const GAP_AFTER_TABLE = 44;
+  const tableTopY = headerH + summaryH + TABLE_TOP_GAP;
+  const layoutY = tableH ? tableTopY + tableH + GAP_AFTER_TABLE : headerH + summaryH + GAP_NO_TABLE;
+  const H = layoutY + layoutH + footerH;
 
   const canvas = document.createElement("canvas");
   canvas.width = W;
@@ -293,24 +377,25 @@ export async function exportReportPng({
   });
   ctx.textAlign = "left";
 
-  // KPIs
-  const boxW = Math.floor((contentW - 30) / 2);
-  const boxH = 110;
-  const kpiX1 = margin;
-  const kpiX2 = margin + boxW + 30;
-  let kpiY = headerH;
-
-  drawKpiBox(ctx, { x: kpiX1, y: kpiY, w: boxW, h: boxH, label: "Total cost", value: fmtMoney(totals.totalCost) });
-  drawKpiBox(ctx, { x: kpiX2, y: kpiY, w: boxW, h: boxH, label: "Total energy (MWh)", value: Number(totals.totalEnergyMWh).toFixed(2) });
-  kpiY += boxH + 24;
-  drawKpiBox(ctx, { x: kpiX1, y: kpiY, w: boxW, h: boxH, label: "Site width (ft)", value: Number(layout.siteWidthFt).toFixed(0) });
-  drawKpiBox(ctx, { x: kpiX2, y: kpiY, w: boxW, h: boxH, label: "Site length (ft)", value: Number(layout.siteLengthFt).toFixed(0) });
+  // Summary card
+  drawSummaryCard({
+    ctx,
+    x: margin,
+    y: headerH,
+    w: contentW,
+    h: summaryH,
+    items: [
+      { label: "Total cost", value: fmtMoney(totals.totalCost) },
+      { label: "Total energy (MWh)", value: Number(totals.totalEnergyMWh).toFixed(2) },
+      { label: "Site width (ft)", value: Number(layout.siteWidthFt).toFixed(0) },
+      { label: "Site length (ft)", value: Number(layout.siteLengthFt).toFixed(0) },
+      { label: "Area (sq ft)", value: Number(layout.siteAreaSqFt).toFixed(0) },
+      { label: "Energy density (MWh/sq ft)", value: Number(totals.energyDensity).toExponential(3) }
+    ]
+  });
 
   // Device table
-  const tableTopY = headerH + kpisH + 24;
-  let afterTableY = headerH + kpisH + 40;
   if (catalog) {
-    afterTableY = tableTopY + tableH + 20;
     ctx.fillStyle = "#ffffff";
     ctx.strokeStyle = "#e5e7eb";
     ctx.lineWidth = 2;
@@ -362,13 +447,12 @@ export async function exportReportPng({
     ctx.lineTo(margin + contentW - 18, startY + 12);
     ctx.stroke();
 
-    const order = ["MegapackXL", "Megapack2", "Megapack", "PowerPack", "Transformer"];
-    const rows = order
-      .map((t) => ({ type: t, count: Number(counts?.[t] ?? 0), def: (catalog as any)[t] }))
-      .filter((r) => r.count > 0 && r.def);
+    const rows = deviceRows;
 
+    const rowsToDraw = rows.slice(0, 7);
     let rowY = startY + 32;
-    for (const r of rows.slice(0, 7)) {
+    for (let idx = 0; idx < rowsToDraw.length; idx++) {
+      const r = rowsToDraw[idx];
       let cx = startX;
       const cells = {
         type: r.type,
@@ -388,18 +472,19 @@ export async function exportReportPng({
         cx += c.w;
       }
       ctx.textAlign = "left";
-      ctx.strokeStyle = "#f9fafb";
-      ctx.beginPath();
-      ctx.moveTo(margin + 18, rowY + 12);
-      ctx.lineTo(margin + contentW - 18, rowY + 12);
-      ctx.stroke();
+      if (idx < rowsToDraw.length - 1) {
+        ctx.strokeStyle = "#f9fafb";
+        ctx.beginPath();
+        ctx.moveTo(margin + 18, rowY + 12);
+        ctx.lineTo(margin + contentW - 18, rowY + 12);
+        ctx.stroke();
+      }
       rowY += rowH;
     }
     ctx.textAlign = "left";
   }
 
   // Layout
-  const layoutY = afterTableY;
   drawText(ctx, `Layout (max width ${layout.maxWidthFt ?? 100}ft)`, margin, layoutY - 12, {
     font: "700 24px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto",
     color: "#111827"
@@ -443,6 +528,7 @@ export async function exportReportPdf({
     const layout = computed?.layout ?? { siteWidthFt: 0, siteLengthFt: 0, siteAreaSqFt: 0, maxWidthFt: 100 };
     const counts = computed?.counts ?? {};
     const placements = layout?.placements ?? [];
+    const deviceRows = catalog ? buildDeviceDetailRows({ counts, catalog }) : [];
 
     const svg = requireSvg(reportElement);
     const svgString = serializeSvg(svg);
@@ -454,10 +540,16 @@ export async function exportReportPdf({
     const layoutW = contentW;
     const layoutH = Math.round(layoutW * (layoutImg.height / layoutImg.width));
     const headerH = 220;
-    const kpisH = 260;
-    const tableH = catalog ? 320 : 0;
+    const summaryH = 220;
+    const tableRowCount = Math.min(deviceRows.length, 7);
+    const tableH = catalog ? calcDeviceDetailsTableHeight(tableRowCount) : 0;
     const footerH = 40;
-    const H = headerH + kpisH + (tableH ? tableH + 30 : 40) + layoutH + footerH;
+    const TABLE_TOP_GAP = 24;
+    const GAP_NO_TABLE = 40;
+    const GAP_AFTER_TABLE = 44;
+    const tableTopY = headerH + summaryH + TABLE_TOP_GAP;
+    const layoutY = tableH ? tableTopY + tableH + GAP_AFTER_TABLE : headerH + summaryH + GAP_NO_TABLE;
+    const H = layoutY + layoutH + footerH;
 
     const canvas = document.createElement("canvas");
     canvas.width = W;
@@ -493,21 +585,23 @@ export async function exportReportPdf({
     });
     ctx.textAlign = "left";
 
-    const boxW = Math.floor((contentW - 30) / 2);
-    const boxH = 110;
-    const kpiX1 = margin;
-    const kpiX2 = margin + boxW + 30;
-    let kpiY = headerH;
-    drawKpiBox(ctx, { x: kpiX1, y: kpiY, w: boxW, h: boxH, label: "Total cost", value: fmtMoney(totals.totalCost) });
-    drawKpiBox(ctx, { x: kpiX2, y: kpiY, w: boxW, h: boxH, label: "Total energy (MWh)", value: Number(totals.totalEnergyMWh).toFixed(2) });
-    kpiY += boxH + 24;
-    drawKpiBox(ctx, { x: kpiX1, y: kpiY, w: boxW, h: boxH, label: "Site width (ft)", value: Number(layout.siteWidthFt).toFixed(0) });
-    drawKpiBox(ctx, { x: kpiX2, y: kpiY, w: boxW, h: boxH, label: "Site length (ft)", value: Number(layout.siteLengthFt).toFixed(0) });
+    drawSummaryCard({
+      ctx,
+      x: margin,
+      y: headerH,
+      w: contentW,
+      h: summaryH,
+      items: [
+        { label: "Total cost", value: fmtMoney(totals.totalCost) },
+        { label: "Total energy (MWh)", value: Number(totals.totalEnergyMWh).toFixed(2) },
+        { label: "Site width (ft)", value: Number(layout.siteWidthFt).toFixed(0) },
+        { label: "Site length (ft)", value: Number(layout.siteLengthFt).toFixed(0) },
+        { label: "Area (sq ft)", value: Number(layout.siteAreaSqFt).toFixed(0) },
+        { label: "Energy density (MWh/sq ft)", value: Number(totals.energyDensity).toExponential(3) }
+      ]
+    });
 
-    const tableTopY = headerH + kpisH + 24;
-    let afterTableY = headerH + kpisH + 40;
     if (catalog) {
-      afterTableY = tableTopY + tableH + 20;
       ctx.fillStyle = "#ffffff";
       ctx.strokeStyle = "#e5e7eb";
       ctx.lineWidth = 2;
@@ -558,13 +652,12 @@ export async function exportReportPdf({
       ctx.lineTo(margin + contentW - 18, startY + 12);
       ctx.stroke();
 
-      const order = ["MegapackXL", "Megapack2", "Megapack", "PowerPack", "Transformer"];
-      const rows = order
-        .map((t) => ({ type: t, count: Number(counts?.[t] ?? 0), def: (catalog as any)[t] }))
-        .filter((r) => r.count > 0 && r.def);
+      const rows = deviceRows;
 
+      const rowsToDraw = rows.slice(0, 7);
       let rowY = startY + 32;
-      for (const r of rows.slice(0, 7)) {
+      for (let idx = 0; idx < rowsToDraw.length; idx++) {
+        const r = rowsToDraw[idx];
         let cx = startX;
         const cells = {
           type: r.type,
@@ -584,17 +677,18 @@ export async function exportReportPdf({
           cx += c.w;
         }
         ctx.textAlign = "left";
-        ctx.strokeStyle = "#f9fafb";
-        ctx.beginPath();
-        ctx.moveTo(margin + 18, rowY + 12);
-        ctx.lineTo(margin + contentW - 18, rowY + 12);
-        ctx.stroke();
+        if (idx < rowsToDraw.length - 1) {
+          ctx.strokeStyle = "#f9fafb";
+          ctx.beginPath();
+          ctx.moveTo(margin + 18, rowY + 12);
+          ctx.lineTo(margin + contentW - 18, rowY + 12);
+          ctx.stroke();
+        }
         rowY += rowH;
       }
       ctx.textAlign = "left";
     }
 
-    const layoutY = afterTableY;
     drawText(ctx, `Layout (max width ${layout.maxWidthFt ?? 100}ft)`, margin, layoutY - 12, {
       font: "700 24px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto",
       color: "#111827"
